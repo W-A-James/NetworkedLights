@@ -1,0 +1,6 @@
+{
+  "verbose": true,
+  "ignore": ["lib/**/*"],
+  "exec": "npm run build && node ./lib/index.js",
+  "ext": "js,html,ts,json"
+}
