@@ -1,6 +1,6 @@
 {
   "verbose": true,
-  "ignore": ["message.js"],
-  "exec": "npm run build && node index.js",
+  "ignore": ["lib/**/*"],
+  "exec": "npm run build && node ./lib/index.js",
   "ext": "js,html,ts,json"
 }

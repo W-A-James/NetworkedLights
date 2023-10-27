@@ -1,5 +1,5 @@
 import * as dgram from 'node:dgram';
-import { CommandMessage } from './server/message.js'
+import { CommandMessage } from '../src/message.js'
 
 
 const onMessage = new CommandMessage('on', {});

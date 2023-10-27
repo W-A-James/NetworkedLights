@@ -1,15 +1,16 @@
 {
-  "name": "server",
+  "name": "networkLightsControlServer",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./lib/index.js",
   "type": "module",
   "scripts": {
-    "start": "npx nodemon --config ./nodemon.json",
+    "start": "NODE_ENV=production node ./lib/index.js",
+    "dev": "npx nodemon --config ./nodemon.json",
     "build": "tsc -p ./tsconfig.json"
   },
   "keywords": [],
-  "author": "",
+  "author": "warren.james.dev@gmail.com",
   "license": "ISC",
   "dependencies": {
     "dotenv": "^16.3.1",

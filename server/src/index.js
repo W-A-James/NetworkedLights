@@ -1,7 +1,8 @@
 import express from 'express';
+import * as dotenv from 'dotenv';
+
 import { MCU } from './mcu_interface.js';
 import { CommandMessage } from './message.js';
-import * as dotenv from 'dotenv';
 
 dotenv.config();
 
