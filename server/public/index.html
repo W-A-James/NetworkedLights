@@ -17,21 +17,27 @@
     }
 
     ;
+
+    div#status > div {
+      display: block;
+    }
   </style>
 </head>
 
 <body>
   <div id="status">
-    <span id="currentPower">Power: </span>
-    <span id="currentAnimation">Animation: </span>
-    <span id="currentBrightness">Brightness: </span>
-    <span id="currentHue">Hue: </span>
+    <div id="currentPower">Power: </div>
+    <div id="currentAnimation">Animation: </div>
+    <div id="currentBrightness">Brightness: </div>
+    <div id="currentHue">Hue: </div>
     
-    <span id="currentBreathingDelta">Breathing Delta: </span>
-    <span id="currentChasingHueWidth">Chasing Hue Width: </span>
-    <span id="currentChasingDelta">Chasing Delta: </span>
-    <span id="currentRainbowDelta">Rainbow Delta: </span>
+    <div id="currentBreathingDelta">Breathing Delta: </div>
+    <div id="currentChasingHueWidth">Chasing Hue Width: </div>
+    <div id="currentChasingDelta">Chasing Delta: </div>
+    <div id="currentRainbowDelta">Rainbow Delta: </div>
   </div>
+  <br>
+  <br>
   <form>
     <div>
       <input type="radio" id="rainbow" name="animation" value="rainbow" , checked="checked">
