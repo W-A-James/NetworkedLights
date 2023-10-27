@@ -42,7 +42,7 @@ const IPAddress gateway(192, 168, 1, 1);
 const IPAddress subnet(255, 255, 255, 0);
 const IPAddress primaryDNS(8, 8, 8, 8);
 const uint16_t localUDPPort = 9000;
-const uint16_t serverUDPPort = 9001;
+const uint16_t serverUDPPort = 9999;
 
 AsyncUDP udp;
 Adafruit_NeoPixel strip(NUM_PIXELS, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
@@ -209,11 +209,20 @@ void printServerMessage(struct ServerMessage* message) {
     case OpCode::OFF:
       Serial.printf("OFF\n");
       break;
+    case OpCode::OP_STATUS:
+      Serial.print("STATUS\n");
+      break;
   }
 }
 
 inline void ingestPacket(AsyncUDPPacket& packet) {
   uint8_t* data = packet.data();
+
+  if (data[0] != packet.length()) {
+    Serial.println("Received broken packet");
+    return;
+  }
+  Serial.printf("Got %u bytes\n", packet.length());
   struct ServerMessage* message = (struct ServerMessage*)data;
   printServerMessage(message);
   switch (message->opCode) {
@@ -283,7 +292,7 @@ inline void ingestPacket(AsyncUDPPacket& packet) {
 }
 
 inline void packCurrentStatus(uint8_t* p) {
-  uint16_t * asUint16 = (uint16_t *)( p+1);
+  uint16_t* asUint16 = (uint16_t*)(p + 1);
   // size
   p[0] = 12;
   // p[1-2]
@@ -295,14 +304,30 @@ inline void packCurrentStatus(uint8_t* p) {
   // p[7-8]
   asUint16[3] = chasingParams.hueDelta;
   p[9] = breathingParams.delta;
-  p[10] = (uint8_t) currentState;
+  p[10] = (uint8_t)currentState;
   p[11] = sharedState.brightness;
 }
 void syncCurrentStatus() {
-  if (udp.connect(serverAddress, serverUDPPort)) {
-    uint8_t packet[12];
-    packCurrentStatus(packet);
-    udp.write(packet, 12);
+  uint8_t packet[12];
+  packCurrentStatus(packet);
+  udp.writeTo(packet, 12, serverAddress, serverUDPPort);
+}
+
+void startListening() {
+  if (udp.listen(localUDPPort)) {
+    Serial.printf("listening on port %u IP: ", localUDPPort);
+    Serial.println(WiFi.localIP());
+    Serial.println(WiFi.localIPv6());
+    udp.onPacket([](AsyncUDPPacket packet) {
+      Serial.print("UDP Packet Type: ");
+      Serial.println(packet.isBroadcast() ? "Broadcast" : packet.isMulticast() ? "Multicast"
+                                                                               : "Unicast");
+
+      ingestPacket(packet);
+    });
+    Serial.println("Attached listener for packets");
+  } else {
+    Serial.println("Failed to start listening");
   }
 }
 
@@ -330,30 +355,8 @@ void setup() {
   delay(10);
 
   Serial.printf("Attempting to listen on udp port %u\n", localUDPPort);
-  if (udp.listen(localUDPPort)) {
-    Serial.printf("listening on port %u IP: ", localUDPPort);
-    Serial.println(WiFi.localIP());
-    Serial.println(WiFi.localIPv6());
-    udp.onPacket([](AsyncUDPPacket packet) {
-      Serial.print("UDP Packet Type: ");
-      Serial.println(packet.isBroadcast() ? "Broadcast" : packet.isMulticast() ? "Multicast"
-                                                                               : "Unicast");
-      // Check that size matches length
-      if (packet.data()[0] != packet.length()) {
-        Serial.println("Received broken packet");
-        return;
-      }
 
-      ingestPacket(packet);
-
-      packet.printf("Got %u bytes of data", packet.length());
-      packet.flush();
-    });
-    Serial.println("Attached listener for packets");
-  } else {
-    Serial.println("Failed to start listening");
-  }
-
+  startListening();
   // Attach interrupt to update state every second
 }
 

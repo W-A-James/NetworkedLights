@@ -15,7 +15,7 @@
   */
 
 /** @param command {Command} */
-function sendCommand (command) {
+function sendCommand(command) {
   const req = new Request('/api', {
     method: 'POST',
     headers: new Headers({ 'content-type': 'application/json' }),
@@ -34,14 +34,38 @@ function sendCommand (command) {
     .catch(console.error);
 }
 
-function getMCUStatus () {
+let currentPower = document.getElementById('currentPower');
+let currentAnimation = document.getElementById('currentAnimation');
+let currentBrightness = document.getElementById('currentBrightness');
+let currentHue = document.getElementById('currentHue');
+let currentBreathingDelta = document.getElementById('currentBreathingDelta');
+let currentChasingHueWidth = document.getElementById('currentChasingHueWidth');
+let currentChasingDelta = document.getElementById('currentChasingDelta');
+let currentRainbowDelta = document.getElementById('currentRainbowDelta');
+function getMCUStatus() {
   const req = new Request('/api', { method: 'GET' });
+
+  fetch(req)
+    .then(res => res.json())
+    .then(status => {
+      status = status.status;
+      console.log(status);
+      currentPower.innerText = `Power: ${status.state.includes('Off') ? 'Off' : 'On'}`;
+      currentAnimation.innerText = `Animation: ${status.state.split('Off')[0]}`;
+      currentBrightness.innerText = `Brightness: ${status.brightness}`;
+      currentHue.innerText = `Hue: ${status.hue}`;
+      currentBreathingDelta.innerText = `Breathing Delta: ${status.bDelta}`;
+      currentChasingHueWidth.innerText = `Chasing Hue Width: ${status.cHueWidth}`;
+      currentChasingDelta.innerText = `Chasing Delta: ${status.cHueDelta}`;
+      currentRainbowDelta.innerText = `Rainbow Delta: ${status.rDelta}`;
+    })
+    .catch(console.error);
 }
 
 // refresh mcu status every 2 seconds
 setInterval(getMCUStatus, 3000);
 
-function sendDatatoMCU () {
+function sendDatatoMCU() {
   const animationRadios = document.getElementsByName('animation');
   const brightness = document.getElementById('brightness');
   const hue = document.getElementById('hue');
@@ -102,3 +126,4 @@ toggleButton.addEventListener('click', (e) => {
   }
   sendCommand(payload);
 });
+

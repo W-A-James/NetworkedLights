@@ -1,5 +1,7 @@
 export type Operation = 'chasing' | 'solid' | 'rainbow' | 'breathing' | 'on' | 'off' | 'status';
 
+export type MCUState = 'rainbow' | 'rainbowOff' | 'breathing' | 'breathingOff' | 'chasing' | 'chasingOff' | 'solid' | 'solidOff';
+
 const PacketSize: Record<Operation, number> = {
   chasing: 7,
   solid: 5,
@@ -18,6 +20,25 @@ const OpCode: Record<Operation, number> = {
   rainbow: 4,
   breathing: 5,
   status: 0xff
+};
+
+const StateCode: Record<MCUState | number, number | MCUState> = {
+  rainbow: 0,
+  rainbowOff: 1,
+  breathing: 2,
+  breathingOff: 3,
+  chasing: 4,
+  chasingOff: 5,
+  solid: 6,
+  solidOff: 7,
+  0: 'rainbow',
+  1: 'rainbowOff',
+  2: 'breathing',
+  3: 'breathingOff',
+  4: 'chasing',
+  5: 'chasingOff',
+  6: 'solid',
+  7: 'solidOff'
 };
 
 export interface RainbowOptions {
@@ -102,15 +123,14 @@ export class CommandMessage {
 }
 
 export interface StatusMessage {
-  size: number
-  state: number // 8 bits
-  opCode: number // 8 bits
+  size: number // 8 bits
+  hue: number // 16 bits
+  rDelta: number // 16 bits
   cHueWidth: number // 16 bits
   cHueDelta: number // 16 bits
-  rDelta: number // 16 bits
   bDelta: number // 8 bits
+  state: string// 8 bits
   brightness: number // 8 bits
-  hue: number // 16 bits
 }
 
 export class MCUStatusMessage {
@@ -119,22 +139,24 @@ export class MCUStatusMessage {
   constructor (buffer: Buffer) {
     this.buffer = buffer;
     if (this.buffer.length !== 12) throw new Error('Incorrectly formatted packet: Wrong length');
+    if (this.buffer[0] !== 12) throw new Error('Malformed packet: Size should be first byte');
   }
 
   decode (): StatusMessage {
+    const stateCode = this.buffer.readUint8(10);
+    const state = StateCode[stateCode] as string;
     const status = {
       size: this.buffer.readUint8(0),
-      opCode: this.buffer.readUint8(1),
-      cHueWidth: this.buffer.readUint16LE(2),
-      cHueDelta: this.buffer.readUint16LE(4),
-      rDelta: this.buffer.readUint16LE(6),
-      bDelta: this.buffer.readUint8(8),
-      brightness: this.buffer.readUint8(9),
-      hue: this.buffer.readUint16LE(10)
+      hue: this.buffer.readUint16LE(1),
+      rDelta: this.buffer.readUint16LE(3),
+      cHueWidth: this.buffer.readUint16LE(5),
+      cHueDelta: this.buffer.readUint16LE(7),
+      bDelta: this.buffer.readUint8(9),
+      state,
+      brightness: this.buffer.readUint8(11)
     };
 
     if (status.size !== 12) throw new Error('Size should be 12 bytes');
-    if (status.opCode !== 0xFF) throw new Error('Invalid OpCode');
 
     return status;
   }

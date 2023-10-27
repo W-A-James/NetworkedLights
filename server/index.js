@@ -27,6 +27,13 @@ app.post('/api', async (req, res) => {
 
 app.get('/api', async (req, res) => {
   // Query MCU status
+  try {
+    await mcu.sendStatusRequest();
+    res.status(200).json({ ok: true, status: mcu.currentStatus });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, message: e.message });
+  }
 });
 
 app.listen(expressPort, () => {

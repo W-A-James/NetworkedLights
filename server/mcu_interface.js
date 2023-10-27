@@ -5,32 +5,29 @@ import { CommandMessage, MCUStatusMessage } from './message.js';
 config();
 
 export class MCU {
-  constructor (port) {
+  constructor(port) {
     this.mcuIP = process.env.NEOPIXEL_LIGHTS_IP ?? '192.168.1.220';
     this.mcuPort = Number(process.env.NEOPIXEL_LIGHTS_UDP_PORT ?? '9000');
-    this.currentStatus = {};
+    this.currentStatus = undefined;
     this.port = port;
+
     this.server = dgram.createSocket('udp4');
 
-    this.server.on('error', (err) => {
-      console.error(err);
+    this.server.on('listening', () => {
+      console.log(`Listening on UDP port ${this.port}`);
     });
-
-    this.server.on('message', (msg, rinfo) => {
-      /** @type {StatusMessage} */
-      let statusMessage;
+    this.server.on('message', (message, rinfo) => {
+      if (rinfo.address !== this.mcuIP) {
+        console.error('dropping packet');
+        return;
+      }
       try {
-        statusMessage = new MCUStatusMessage(msg).decode();
-        this.currentStatus = statusMessage;
+        const status = new MCUStatusMessage(message).decode();
+        this.currentStatus = status;
       } catch (e) {
         console.error(e);
       }
     });
-
-    this.server.on('listening', () => {
-      console.log(`UDP server listening ${this.server.address().address}:${this.server.address().port}`);
-    });
-
     this.server.bind(this.port);
   }
 
@@ -38,7 +35,7 @@ export class MCU {
     * @param message {CommandMessage}
     * @returns {Promise<void>}
     * */
-  async sendCommand (message) {
+  async sendCommand(message) {
     const sendSocket = dgram.createSocket('udp4');
     await new Promise((resolve, reject) => {
       sendSocket.send(message.buffer, this.mcuPort, this.mcuIP, (err) => {
@@ -51,21 +48,21 @@ export class MCU {
     });
   }
 
-  async sendStatusRequest () {
-    const sendSocket = dgram.createSocket('udp4');
+  /** @returns {Promise<StatusMessage>} */
+  async sendStatusRequest() {
     const message = new CommandMessage('status', {});
-    await new Promise((resolve, reject) => {
-      sendSocket.send(message, this.mcuPort, this.mcuIP, (err) => {
+    return await new Promise((resolve, reject) => {
+      this.server.send(message.buffer, this.mcuPort, this.mcuIP, (err) => {
         if (err) {
-          sendSocket.close(() => { reject(err); });
+          reject(err);
         } else {
-          sendSocket.close(resolve)
+          resolve();
         }
       });
     });
   }
 
-  close () {
+  close() {
     this.server.close();
   }
 };
