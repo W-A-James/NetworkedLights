@@ -62,8 +62,8 @@ function getMCUStatus() {
     .catch(console.error);
 }
 
-// refresh mcu status every 2 seconds
-setInterval(getMCUStatus, 3000);
+// refresh mcu status every 0.5 seconds
+setInterval(getMCUStatus, 500);
 
 function sendDatatoMCU() {
   const animationRadios = document.getElementsByName('animation');
