@@ -1,15 +1,15 @@
 import dgram from 'node:dgram';
-import { config } from 'dotenv';
 import { CommandMessage, MCUStatusMessage } from './message.js';
 
-config();
-
 export class MCU {
-  constructor(port) {
-    this.mcuIP = process.env.NEOPIXEL_LIGHTS_IP ?? '192.168.1.220';
-    this.mcuPort = Number(process.env.NEOPIXEL_LIGHTS_UDP_PORT ?? '9000');
-    this.currentStatus = undefined;
+  constructor(port, mcuIP, mcuPort) {
+    if (typeof port !== 'number' || Number.isNaN(port)) throw new Error(`port must be a number; got: ${port}`);
+    if (typeof mcuIP !== 'string') throw new Error(`mcuIP must be a string representing MCU IP address; got: ${mcuIP}`);
+    if (typeof mcuPort !== 'number' || Number.isNaN(mcuPort)) throw new Error(`mcuPort must be a number; got: ${mcuPort}`);
     this.port = port;
+    this.mcuIP = mcuIP;
+    this.mcuPort = mcuPort;
+    this.currentStatus = undefined;
 
     this.server = dgram.createSocket('udp4');
 

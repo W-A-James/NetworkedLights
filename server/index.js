@@ -1,15 +1,18 @@
 import express from 'express';
 import { MCU } from './mcu_interface.js';
 import { CommandMessage } from './message.js';
-import { config } from 'dotenv';
-config();
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 app.use(express.static('./public'));
 app.use(express.json());
 
-const expressPort = process.env.PORT ?? 3000;
-const mcuPort = process.env.LOCAL_UDP_PORT ?? 9999;
+const EXPRESS_TCP_PORT = Number(process.env.EXPRESS_PORT);
+const LOCAL_UDP_PORT = Number(process.env.LOCAL_UDP_PORT);
+const MCU_IP = process.env.MCU_IP;
+const MCU_PORT = Number(process.env.MCU_PORT);
 
 /** @type {MCU} */
 let mcu;
@@ -36,7 +39,7 @@ app.get('/api', async (req, res) => {
   }
 });
 
-app.listen(expressPort, () => {
-  console.log(`HTTP server listening on port ${expressPort}`);
-  mcu = new MCU(mcuPort);
+app.listen(EXPRESS_TCP_PORT, () => {
+  console.log(`HTTP server listening on port ${EXPRESS_TCP_PORT}`);
+  mcu = new MCU(LOCAL_UDP_PORT, MCU_IP, MCU_PORT);
 });
