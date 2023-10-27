@@ -30,6 +30,7 @@ ported for sparkfun esp32
 #define NUM_PIXELS 50
 
 #include <WiFi.h>
+
 #include "AsyncUDP.h"
 
 const char* ssid = "MyOptimum b6867b_EXT";
@@ -40,7 +41,8 @@ const IPAddress localIP(192, 168, 1, 220);
 const IPAddress gateway(192, 168, 1, 1);
 const IPAddress subnet(255, 255, 255, 0);
 const IPAddress primaryDNS(8, 8, 8, 8);
-const uint16_t serverPort = 1234;
+const uint16_t localUDPPort = 9000;
+const uint16_t serverUDPPort = 9001;
 
 AsyncUDP udp;
 Adafruit_NeoPixel strip(NUM_PIXELS, PIXEL_PIN, NEO_GRB + NEO_KHZ800);
@@ -83,10 +85,14 @@ struct ServerMessage {
 };
 
 struct SyncMessage {
-  struct RainbowParams rainbowParams;
-  struct ChasingParams chasingParams;
-  struct BreathingParams breathingParams;
-  struct SolidParams solidParams;
+  uint8_t size;
+  uint16_t hue;
+  uint16_t rainbowDelta;
+  uint16_t chasingHueWidth;
+  uint16_t chasingHueDelta;
+  uint8_t breathingDelta;
+  uint8_t state;
+  uint8_t brightness;
 };
 
 enum State {
@@ -106,62 +112,64 @@ enum OpCode {
   OP_CHASING = 2,
   OP_SOLID = 3,
   OP_RAINBOW = 4,
-  OP_BREATHING = 5
+  OP_BREATHING = 5,
+  OP_STATUS = 0xFF,
 };
 
-State currentState = State::SOLID_OFF;
-struct BreathingParams breathingParams = { .delta = 1 };
+State currentState = State::RAINBOW;
+struct BreathingParams breathingParams = { .delta = 8 };
 struct RainbowParams rainbowParams = { .delta = 300, .brightness = 255 };
-struct ChasingParams chasingParams = { .hueWidth = 16384, .hueDelta = 256, .brightness = 255 };
+struct ChasingParams chasingParams = { .hueWidth = 16384 / 8, .hueDelta = 256, .brightness = 255 };
 struct SolidParams solidParams = { .hue = 0, .brightness = 255 };
 
 struct {
   uint16_t offset;
-} rainbow_state = { .offset = 0 };
+} rainbowState = { .offset = 0 };
 
 struct {
   uint16_t start_hue;
-} chasing_state = { .start_hue = 0 };
+} chasingState = { .start_hue = 0 };
 
 struct {
   uint8_t t;
-} breathing_state = { .t = 0 };
+} breathingState = { .t = 0 };
 
 struct {
   uint8_t brightness;
   uint16_t hue;
   uint32_t colour;
-} shared_state = { .brightness = 255, .hue = 0, .colour = 0 };
+} sharedState = { .brightness = 64, .hue = 0, .colour = 0 };
 
 inline void handleCurrentState() {
   strip.clear();
   switch (currentState) {
     case RAINBOW:
-      rainbow_state.offset += rainbowParams.delta;
-      strip.setBrightness(shared_state.brightness);
-      strip.rainbow(rainbow_state.offset, 1, 255, 255, true);
+      rainbowState.offset += rainbowParams.delta;
+      strip.setBrightness(sharedState.brightness);
+      strip.rainbow(rainbowState.offset, 1, 255, 255, true);
       break;
 
     case BREATHING:
-      shared_state.colour = strip.gamma32(strip.ColorHSV(shared_state.hue, 255, 255));
-      strip.fill(shared_state.colour);
+      sharedState.colour = strip.gamma32(strip.ColorHSV(sharedState.hue, 255, 255));
+      strip.fill(sharedState.colour);
 
-      strip.setBrightness(strip.sine8(breathing_state.t));
-      breathing_state.t += breathingParams.delta;
+      strip.setBrightness(strip.sine8(breathingState.t));
+      breathingState.t += breathingParams.delta;
       break;
 
     case CHASING:
-      strip.setBrightness(shared_state.brightness);
+      strip.setBrightness(sharedState.brightness);
       for (int i = 0; i < NUM_PIXELS; i++) {
         strip.setPixelColor(i,
                             strip.gamma32(
-                              strip.ColorHSV(chasing_state.start_hue + (chasingParams.hueWidth / NUM_PIXELS), 255, 255)));
+                              strip.ColorHSV(chasingState.start_hue + (chasingParams.hueWidth / NUM_PIXELS), 255, 255)));
       }
-      chasing_state.start_hue += chasingParams.hueDelta;
+      chasingState.start_hue += chasingParams.hueDelta;
       break;
 
     case SOLID:
-      strip.setBrightness(0);
+      strip.setBrightness(sharedState.brightness);
+      strip.fill(strip.gamma32(strip.ColorHSV(sharedState.hue, 255, 255)));
       break;
 
     case RAINBOW_OFF:
@@ -173,32 +181,62 @@ inline void handleCurrentState() {
 
   strip.show();
 }
+void printServerMessage(struct ServerMessage* message) {
+  switch (message->opCode) {
+    case OpCode::OP_RAINBOW:
+      Serial.printf("RAINBOW: delta: %u, brightness: %u\n", message->options.rainbowParams.delta, message->options.rainbowParams.brightness);
+      break;
+    case OpCode::OP_BREATHING:
+      Serial.printf("BREATHING: hue: %u, delta: %u, brightness: %u\n",
+                    message->options.breathingParams.hue,
+                    message->options.breathingParams.delta,
+                    message->options.breathingParams.brightness);
+      break;
+    case OpCode::OP_CHASING:
+      Serial.printf("CHASING: hueWidth: %u, hueDelta: %u, brightness: %u\n",
+                    message->options.chasingParams.hueWidth,
+                    message->options.chasingParams.hueDelta,
+                    message->options.chasingParams.brightness);
+      break;
+    case OpCode::OP_SOLID:
+      Serial.printf("SOLID: hue: %u, brightness: %u\n",
+                    message->options.solidParams.hue,
+                    message->options.solidParams.brightness);
+      break;
+    case OpCode::ON:
+      Serial.printf("ON\n");
+      break;
+    case OpCode::OFF:
+      Serial.printf("OFF\n");
+      break;
+  }
+}
 
 inline void ingestPacket(AsyncUDPPacket& packet) {
   uint8_t* data = packet.data();
   struct ServerMessage* message = (struct ServerMessage*)data;
-
+  printServerMessage(message);
   switch (message->opCode) {
     case OpCode::OP_RAINBOW:
       rainbowParams.delta = message->options.rainbowParams.delta;
-      rainbowParams.brightness = message->options.rainbowParams.brightness;
+      sharedState.brightness = message->options.rainbowParams.brightness;
       currentState = State::RAINBOW;
       break;
     case OpCode::OP_CHASING:
       chasingParams.hueDelta = message->options.chasingParams.hueDelta;
       chasingParams.hueWidth = message->options.chasingParams.hueWidth;
-      chasingParams.brightness = message->options.chasingParams.brightness;
+      sharedState.brightness = message->options.chasingParams.brightness;
       currentState = State::CHASING;
       break;
     case OpCode::OP_BREATHING:
       breathingParams.delta = message->options.breathingParams.delta;
-      breathingParams.hue = message->options.breathingParams.hue;
-      breathingParams.brightness = message->options.breathingParams.brightness;
+      sharedState.hue = message->options.breathingParams.hue;
+      sharedState.brightness = message->options.breathingParams.brightness;
       currentState = State::BREATHING;
       break;
     case OpCode::OP_SOLID:
-      solidParams.brightness = message->options.solidParams.brightness;
-      solidParams.hue = message->options.solidParams.hue;
+      sharedState.brightness = message->options.solidParams.brightness;
+      sharedState.hue = message->options.solidParams.hue;
       currentState = State::SOLID;
       break;
     case OpCode::ON:
@@ -237,23 +275,42 @@ inline void ingestPacket(AsyncUDPPacket& packet) {
             currentState = State::SOLID;
           break;
       }
+      break;
+    case OpCode::OP_STATUS:
+      syncCurrentStatus();
+      break;
   }
 }
 
-void syncCurrentParams() {
-  struct SyncMessage message {.breathingParams=breathingParams, .chasingParams=chasingParams, .rainbowParams=rainbowParams, .solidParams=solidParams};
-
-  // TODO: figure out how to send message.
-  AsyncUDPMessage udpMessage;
-  udp.send();
+inline void packCurrentStatus(uint8_t* p) {
+  uint16_t * asUint16 = (uint16_t *)( p+1);
+  // size
+  p[0] = 12;
+  // p[1-2]
+  asUint16[0] = sharedState.hue;
+  // p[3-4]
+  asUint16[1] = rainbowParams.delta;
+  // p[5-6]
+  asUint16[2] = chasingParams.hueWidth;
+  // p[7-8]
+  asUint16[3] = chasingParams.hueDelta;
+  p[9] = breathingParams.delta;
+  p[10] = (uint8_t) currentState;
+  p[11] = sharedState.brightness;
 }
-
+void syncCurrentStatus() {
+  if (udp.connect(serverAddress, serverUDPPort)) {
+    uint8_t packet[12];
+    packCurrentStatus(packet);
+    udp.write(packet, 12);
+  }
+}
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("test");
   Serial.println("Attempting to configure static IP address");
-  //WiFi.mode(WIFI_STA);
+  WiFi.mode(WIFI_STA);
+
   if (!WiFi.config(localIP, gateway, subnet, primaryDNS)) {
     Serial.println("Failed to configure static IP");
   }
@@ -265,21 +322,22 @@ void setup() {
   }
 
   Serial.println("\nWiFi connected.");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
 
+  currentState = State::SOLID_OFF;
   strip.begin();
   strip.show();
 
   delay(10);
 
-  Serial.printf("Attempting to listen on udp port %u\n", serverPort);
-  if (udp.listen(serverPort)) {
-    Serial.printf("listening on port %u\n", serverPort);
+  Serial.printf("Attempting to listen on udp port %u\n", localUDPPort);
+  if (udp.listen(localUDPPort)) {
+    Serial.printf("listening on port %u IP: ", localUDPPort);
+    Serial.println(WiFi.localIP());
+    Serial.println(WiFi.localIPv6());
     udp.onPacket([](AsyncUDPPacket packet) {
       Serial.print("UDP Packet Type: ");
-      Serial.print(packet.isBroadcast() ? "Broadcast" : packet.isMulticast() ? "Multicast"
-                                                                             : "Unicast");
+      Serial.println(packet.isBroadcast() ? "Broadcast" : packet.isMulticast() ? "Multicast"
+                                                                               : "Unicast");
       // Check that size matches length
       if (packet.data()[0] != packet.length()) {
         Serial.println("Received broken packet");
@@ -288,18 +346,18 @@ void setup() {
 
       ingestPacket(packet);
 
-
       packet.printf("Got %u bytes of data", packet.length());
+      packet.flush();
     });
     Serial.println("Attached listener for packets");
   } else {
     Serial.println("Failed to start listening");
   }
+
+  // Attach interrupt to update state every second
 }
 
 void loop() {
-
-
   handleCurrentState();
-  delay(100);
+  delay(25);
 }

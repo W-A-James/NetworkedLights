@@ -1,0 +1,6 @@
+{
+  "verbose": true,
+  "ignore": ["message.js"],
+  "exec": "npm run build && node index.js",
+  "ext": "js,html,ts,json"
+}

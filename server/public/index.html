@@ -1,46 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title></title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style type="text/css">
-      input {
-        display: block;
-      };
-    </style>
-  </head>
-  <body>
-    <form method="POST" target="_self">
-      <input type="radio" id="rainbow" name="animation" value="rainbow">
+
+<head>
+  <title></title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style type="text/css">
+    input {
+      display: inline-block;
+    }
+
+    ;
+
+    label {
+      display: inline-block;
+    }
+
+    ;
+  </style>
+</head>
+
+<body>
+  <div id="status">
+    <span id="currentPower">Power: </span>
+    <span id="currentAnimation">Animation: </span>
+    <span id="currentBrightness">Brightness: </span>
+    <span id="currentHue">Hue: </span>
+    
+    <span id="currentBreathingDelta">Breathing Delta: </span>
+    <span id="currentChasingHueWidth">Chasing Hue Width: </span>
+    <span id="currentChasingDelta">Chasing Delta: </span>
+    <span id="currentRainbowDelta">Rainbow Delta: </span>
+  </div>
+  <form>
+    <div>
+      <input type="radio" id="rainbow" name="animation" value="rainbow" , checked="checked">
       <label for="rainbow">Rainbow</label>
+    </div>
+    <div>
       <input type="radio" id="breathing" name="animation" value="breathing">
       <label for="breathing">Breathing</label>
+    </div>
+
+    <div>
       <input type="radio" id="chasing" name="animation" value="chasing">
       <label for="chasing">Chasing</label>
+    </div>
+    <div>
       <input type="radio" id="solid" name="animation" value="solid">
       <label for="solid">Solid</label>
+    </div>
 
-      <!-- global options -->
-      <input type="number" id="brightness" name="brightness" min="0" max="255">
+    <!-- global options -->
+    <div>
       <label for="brightness">Brightness (0 to 255): </label>
+      <input type="number" id="brightness" name="brightness" min="0" max="255" value="255">
+    </div>
 
-      <input type="number" id="hue" name="hue" min="0" max="65535">
+    <div>
       <label for="hue">Hue (0 to 65535): </label>
+      <input type="number" id="hue" name="hue" min="0" max="65535" value="0">
+    </div>
 
-        <!-- breathing -->
-      <input type="number" id="breathingDelta" name="breathingDelta" min="0" max="255">
+    <!-- breathing -->
+    <div>
       <label for="breathingDelta">Breathing Delta(0 to 255): </label>
-        <!-- chasing -->
-      <input type="number" id="chasingHueWidth" name="chasingHueWidth" min="0" max="65535">
-      <label for="chasingHueWidth">Chasing hue width(0 to 65535)</label>
-      <input type="number" id="chasingDelta" name="chasingDelta" min="0" max="65535">
-      <label for="chasingDelta">Chasing delta(0 to 65535)</label>
-        <!-- rainbow -->
-      <input type="number" id="rainbowDelta" name="rainbowDelta" min="0" max="65535">
-      <label for="rainbowDelta">Rainbow delta(0 to 65535)</label>
+      <input type="number" id="breathingDelta" name="breathingDelta" min="0" max="255" value="1">
+    </div>
 
-      <input type="submit" value="sendRequest">
-    </form>
-  </body>
+    <!-- chasing -->
+    <div>
+      <label for="chasingHueWidth">Chasing hue width(0 to 65535): </label>
+      <input type="number" id="chasingHueWidth" name="chasingHueWidth" min="0" max="65535" value="1000">
+    </div>
+    <div>
+      <label for="chasingDelta">Chasing delta(0 to 65535): </label>
+      <input type="number" id="chasingDelta" name="chasingDelta" min="0" max="65535" value="2000">
+    </div>
+
+    <!-- rainbow -->
+    <div>
+      <label for="rainbowDelta">Rainbow delta(0 to 65535): </label>
+      <input type="number" id="rainbowDelta" name="rainbowDelta" min="0" max="65535" value="1000">
+    </div>
+
+    <button id='submit'>Submit</button>
+  </form>
+  <button id="toggle" data-state="on">On</button>
+</body>
+<script src='js/index.js'></script>
+
 </html>
