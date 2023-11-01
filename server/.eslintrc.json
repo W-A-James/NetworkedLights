@@ -10,16 +10,5 @@
   },
   "rules": {
     "@typescript-eslint/semi": "off"
-  },
-  "overrides": [
-    {
-      "files": [
-        "src/*.js"
-      ],
-      "rules": {
-        "@typescript-eslint/strict-blooean-expressions": "off",
-        "@typescript-eslint/explicit-function-return-type": "off"
-      }
-    }
-  ]
+  }
 }

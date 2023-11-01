@@ -7,7 +7,8 @@
   "scripts": {
     "start": "NODE_ENV=production node ./lib/index.js",
     "dev": "npx nodemon --config ./nodemon.json",
-    "build": "tsc -p ./tsconfig.json"
+    "build": "tsc -p ./tsconfig.json",
+    "test": "npx ts-node test/message.test.ts"
   },
   "keywords": [],
   "author": "warren.james.dev@gmail.com",
@@ -26,6 +27,7 @@
     "eslint-plugin-n": "^16.2.0",
     "eslint-plugin-promise": "^6.1.1",
     "nodemon": "^3.0.1",
+    "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   }
 }
