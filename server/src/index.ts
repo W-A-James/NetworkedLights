@@ -41,7 +41,11 @@ app.post('/api', (req, res) => {
 app.get('/api', (_, res) => {
   mcu.sendStatusRequest().then(
     () => {
-      res.status(200).json({ ok: true, status: mcu.currentStatus });
+      if (mcu.currentStatus !== undefined) {
+        res.status(200).json({ ok: true, status: mcu.currentStatus });
+      } else {
+        res.status(404).json({ ok: false, message: 'Failed to reach microcontroller' });
+      }
     },
     (e: Error) => {
       console.error(e);
