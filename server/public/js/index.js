@@ -34,30 +34,42 @@ function sendCommand(command) {
     .catch(console.error);
 }
 
-let currentPower = document.getElementById('currentPower');
-let currentAnimation = document.getElementById('currentAnimation');
-let currentBrightness = document.getElementById('currentBrightness');
-let currentHue = document.getElementById('currentHue');
-let currentBreathingDelta = document.getElementById('currentBreathingDelta');
-let currentChasingHueWidth = document.getElementById('currentChasingHueWidth');
-let currentChasingDelta = document.getElementById('currentChasingDelta');
-let currentRainbowDelta = document.getElementById('currentRainbowDelta');
+const POWER_STATUS = document.getElementById('currentPower');
+const ANIMATION_STATUS = document.getElementById('currentAnimation');
+const BRIGHTNESS_STATUS = document.getElementById('currentBrightness');
+const HUE_STATUS = document.getElementById('currentHue');
+const BREATHING_DELTA_STATUS = document.getElementById('currentBreathingDelta');
+const CHASING_HUE_WIDTH_STATUS = document.getElementById('currentChasingHueWidth');
+const CHASING_DELTA_STATUS = document.getElementById('currentChasingDelta');
+const RAINBOW_DELTA_STATUS = document.getElementById('currentRainbowDelta');
+
+const ANIMATION_RADIO_INPUTS = document.getElementsByName('animation');
+const BRIGHTNESS_INPUT = document.getElementById('brightness');
+const HUE_INPUT = document.getElementById('hue');
+const BREATHING_DELTA_INPUT = document.getElementById('breathingDelta');
+const CHASING_HUE_WIDTH_INPUT = document.getElementById('chasingHueWidth');
+const CHASING_DELTA_INPUT = document.getElementById('chasingDelta');
+const RAINBOW_DELTA_INPUT = document.getElementById('rainbowDelta');
+
 function getMCUStatus() {
   const req = new Request('/api', { method: 'GET' });
 
   fetch(req)
     .then(res => res.json())
     .then(status => {
-      status = status.status;
-      console.log(status);
-      currentPower.innerText = `Power: ${status.state.includes('Off') ? 'Off' : 'On'}`;
-      currentAnimation.innerText = `Animation: ${status.state.split('Off')[0]}`;
-      currentBrightness.innerText = `Brightness: ${status.brightness}`;
-      currentHue.innerText = `Hue: ${status.hue}`;
-      currentBreathingDelta.innerText = `Breathing Delta: ${status.bDelta}`;
-      currentChasingHueWidth.innerText = `Chasing Hue Width: ${status.cHueWidth}`;
-      currentChasingDelta.innerText = `Chasing Delta: ${status.cHueDelta}`;
-      currentRainbowDelta.innerText = `Rainbow Delta: ${status.rDelta}`;
+      if (status.ok) {
+        status = status.status;
+        POWER_STATUS.innerText = `${status.state.includes('Off') ? 'Off' : 'On'}`;
+        ANIMATION_STATUS.innerText = `${status.state.split('Off')[0]}`;
+        BRIGHTNESS_STATUS.innerText = `${status.brightness}`;
+        HUE_STATUS.innerText = `${status.hue}`;
+        BREATHING_DELTA_STATUS.innerText = `${status.bDelta}`;
+        CHASING_HUE_WIDTH_STATUS.innerText = `${status.cHueWidth}`;
+        CHASING_DELTA_STATUS.innerText = `${status.cHueDelta}`;
+        RAINBOW_DELTA_STATUS.innerText = `${status.rDelta}`;
+      } else {
+        throw new Error(status.message);
+      }
     })
     .catch(console.error);
 }
@@ -66,32 +78,24 @@ function getMCUStatus() {
 setInterval(getMCUStatus, 500);
 
 function sendDatatoMCU() {
-  const animationRadios = document.getElementsByName('animation');
-  const brightness = document.getElementById('brightness');
-  const hue = document.getElementById('hue');
-  const breathingDelta = document.getElementById('breathingDelta');
-  const chasingHueWidth = document.getElementById('chasingHueWidth');
-  const chasingDelta = document.getElementById('chasingDelta');
-  const rainbowDelta = document.getElementById('rainbowDelta');
-
   const selectedRadio = (() => {
-    for (const node of animationRadios) {
-      if (node.checked) return node;
+    for (const radio of ANIMATION_RADIO_INPUTS) {
+      if (radio.checked) return radio;
     }
   })();
 
   /** @type Command */
-  const body = { op: selectedRadio.id, opts: { hue: hue.value, brightness: brightness.value } };
+  const body = { op: selectedRadio.id, opts: { hue: HUE_INPUT.value, brightness: BRIGHTNESS_INPUT.value } };
   switch (selectedRadio.id) {
     case 'rainbow':
-      body.opts.delta = rainbowDelta.value;
+      body.opts.delta = RAINBOW_DELTA_INPUT.value;
       break;
     case 'breathing':
-      body.opts.delta = breathingDelta.value;
+      body.opts.delta = BREATHING_DELTA_INPUT.value;
       break;
     case 'chasing':
-      body.opts.hueWidth = chasingHueWidth.value;
-      body.opts.hueDelta = chasingDelta.value;
+      body.opts.hueWidth = CHASING_HUE_WIDTH_INPUT.value;
+      body.opts.hueDelta = CHASING_DELTA_INPUT.value;
       break;
     case 'solid':
       break;
@@ -106,24 +110,26 @@ document.getElementById('submit').addEventListener('click', (e) => {
 });
 
 const toggleButton = document.getElementById('toggle');
-toggleButton.addEventListener('click', (e) => {
+toggleButton.addEventListener('click', (_e) => {
+  const on = POWER_STATUS.value === 'On'
+    ? true
+    : POWER_STATUS.value === 'Off'
+      ? false
+      : undefined;
   const payload = { opts: {} };
-  switch (toggleButton.getAttribute('data-state')) {
-    case 'on':
+  switch (on) {
+    case true:
       payload.op = 'off';
-      toggleButton.setAttribute('data-state', 'off');
       toggleButton.innerText = 'Off';
       break;
-    case 'off':
+    case false:
       payload.op = 'on';
-      toggleButton.setAttribute('data-state', 'on');
       toggleButton.innerText = 'On';
       break;
     default:
-      payload.op = 'on';
-      toggleButton.setAttribute('data-state', 'on');
-      toggleButton.innerText = 'On';
+      toggleButton.innerText = 'Disabled';
   }
-  sendCommand(payload);
-});
 
+  if (on === true || on === false)
+    sendCommand(payload);
+});
