@@ -73,15 +73,18 @@ export class CommandMessage {
   constructor (op: 'chasing', value: ChasingOptions);
   constructor (op: 'breathing', value: BreathingOptions);
   constructor (op: 'solid', value: SolidOptions);
-  constructor (op: 'on', value: undefined);
-  constructor (op: 'off', value: undefined);
-  constructor (op: Operation, options?: Options) {
+  constructor (op: 'on' | 'off' | 'status');
+  constructor (op: 'rainbow' | 'chasing' | 'breathing' | 'solid' | 'on' | 'off' | 'status', options?: Options) {
     this.op = op;
     this._buffer = Buffer.alloc(PacketSize[op]);
     // Set packet size
     this._buffer[0] = PacketSize[op];
     // Set opcode
     this._buffer[1] = OpCode[op];
+    let solidOptions: SolidOptions;
+    let breathingOptions: BreathingOptions;
+    let chasingOptions: ChasingOptions;
+    let rainbowOptions: RainbowOptions;
     switch (op) {
       case 'on':
       case 'off':
@@ -89,26 +92,26 @@ export class CommandMessage {
         break;
       case 'solid':
         // Confirmed that ESP32 uses LE byte ordering
-        const solidOptions = options as SolidOptions;
+        solidOptions = options as SolidOptions;
         // bytes 2 and 3
         this._buffer.writeUInt16LE(solidOptions.hue, 2)
         // byte 4
         this._buffer[4] = solidOptions.brightness;
         break;
       case 'breathing':
-        const breathingOptions = options as BreathingOptions;
+        breathingOptions = options as BreathingOptions;
         this._buffer.writeUint16LE(breathingOptions.hue, 2);
         this._buffer[4] = breathingOptions.delta;
         this._buffer[5] = breathingOptions.brightness;
         break;
       case 'chasing':
-        const chasingOptions = options as ChasingOptions;
+        chasingOptions = options as ChasingOptions;
         this._buffer.writeUint16LE(chasingOptions.hueWidth, 2);
         this._buffer.writeUint16LE(chasingOptions.hueDelta, 4);
         this._buffer[6] = chasingOptions.brightness;
         break;
       case 'rainbow':
-        const rainbowOptions = options as RainbowOptions;
+        rainbowOptions = options as RainbowOptions;
         this._buffer.writeUInt16LE(rainbowOptions.delta, 2);
         this._buffer[4] = rainbowOptions.brightness;
         break;

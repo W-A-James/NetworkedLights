@@ -1,43 +1,35 @@
 #include <Adafruit_NeoPixel.h>
 
 /*
- WiFi Web Server LED Blink
+ WiFi Web Server Neopixel
 
- A simple web server that lets you blink an LED via the web.
- This sketch will print the IP address of your WiFi Shield (once connected)
- to the Serial monitor. From there, you can open that address in a web browser
- to turn on and off the LED on pin 26
-
- If the IP address of your shield is yourAddress:
- http://yourAddress/H turns the LED on
- http://yourAddress/L turns it off
-
- This example is written for a network using WPA2 encryption. For insecure
- WEP or WPA, change the Wifi.begin() call and use Wifi.setMinSecurity() accordingly.
-
- Circuit:
- * WiFi shield attached
- * LED attached to pin 26
+A web server that controls a string of NEOPixels, controlled over UDP
 
  created for arduino 25 Nov 2012
  by Tom Igoe
 
 ported for sparkfun esp32 
 31.01.2017 by Jan Hendrik Berlin
+
+ported for Adafruit Huzzah 32 by Warren James
  
  */
 #define PIXEL_PIN 25
 #define NUM_PIXELS 50
+#define HANG() do { delay(10000); } while(1)
 
 #include <WiFi.h>
 
 #include "AsyncUDP.h"
 
-const char* ssid = "MyOptimum b6867b_EXT";
-const char* password = "51-pink-5831";
+const char* ssid = "*************";
+const char* password = "***********";
 
-const IPAddress serverAddress(192, 168, 1, 228);
+// Control server address - replace with your server's IP
+const IPAddress serverAddress(192, 168, 1, 221);
+// Static IP being assigned to ESP32
 const IPAddress localIP(192, 168, 1, 220);
+// Replace these with appropriate values
 const IPAddress gateway(192, 168, 1, 1);
 const IPAddress subnet(255, 255, 255, 0);
 const IPAddress primaryDNS(8, 8, 8, 8);
@@ -162,7 +154,7 @@ inline void handleCurrentState() {
       for (int i = 0; i < NUM_PIXELS; i++) {
         strip.setPixelColor(i,
                             strip.gamma32(
-                              strip.ColorHSV(chasingState.start_hue + (chasingParams.hueWidth / NUM_PIXELS), 255, 255)));
+                              strip.ColorHSV(chasingState.start_hue + i*(chasingParams.hueWidth / NUM_PIXELS), 255, 255)));
       }
       chasingState.start_hue += chasingParams.hueDelta;
       break;
@@ -181,48 +173,54 @@ inline void handleCurrentState() {
 
   strip.show();
 }
+
 void printServerMessage(struct ServerMessage* message) {
   switch (message->opCode) {
     case OpCode::OP_RAINBOW:
-      Serial.printf("RAINBOW: delta: %u, brightness: %u\n", message->options.rainbowParams.delta, message->options.rainbowParams.brightness);
+      Serial.printf("Command: RAINBOW: delta: %u, brightness: %u\n", message->options.rainbowParams.delta, message->options.rainbowParams.brightness);
       break;
     case OpCode::OP_BREATHING:
-      Serial.printf("BREATHING: hue: %u, delta: %u, brightness: %u\n",
+      Serial.printf("Command: BREATHING: hue: %u, delta: %u, brightness: %u\n",
                     message->options.breathingParams.hue,
                     message->options.breathingParams.delta,
                     message->options.breathingParams.brightness);
       break;
     case OpCode::OP_CHASING:
-      Serial.printf("CHASING: hueWidth: %u, hueDelta: %u, brightness: %u\n",
+      Serial.printf("Command: CHASING: hueWidth: %u, hueDelta: %u, brightness: %u\n",
                     message->options.chasingParams.hueWidth,
                     message->options.chasingParams.hueDelta,
                     message->options.chasingParams.brightness);
       break;
     case OpCode::OP_SOLID:
-      Serial.printf("SOLID: hue: %u, brightness: %u\n",
+      Serial.printf("Command: SOLID: hue: %u, brightness: %u\n",
                     message->options.solidParams.hue,
                     message->options.solidParams.brightness);
       break;
     case OpCode::ON:
-      Serial.printf("ON\n");
+      Serial.printf("Command: ON\n");
       break;
     case OpCode::OFF:
-      Serial.printf("OFF\n");
+      Serial.printf("Command: OFF\n");
       break;
     case OpCode::OP_STATUS:
-      Serial.print("STATUS\n");
+      Serial.print("Command: STATUS\n");
       break;
   }
 }
 
-inline void ingestPacket(AsyncUDPPacket& packet) {
+void ingestPacket(AsyncUDPPacket packet) {
+  if (packet.remoteIP() != serverAddress || packet.isBroadcast() || packet.isMulticast()) {  // Drop packet if not coming directly from configured control server
+    Serial.print("Dropping packet from unknown host: ");
+    Serial.println(packet.remoteIP());
+    return;
+  }
+
   uint8_t* data = packet.data();
 
   if (data[0] != packet.length()) {
     Serial.println("Received broken packet");
     return;
   }
-  Serial.printf("Got %u bytes\n", packet.length());
   struct ServerMessage* message = (struct ServerMessage*)data;
   printServerMessage(message);
   switch (message->opCode) {
@@ -291,53 +289,55 @@ inline void ingestPacket(AsyncUDPPacket& packet) {
   }
 }
 
+// Marshalls current status into a packet that can be interpreted by the control server
 inline void packCurrentStatus(uint8_t* p) {
   uint16_t* asUint16 = (uint16_t*)(p + 1);
-  // size
+  // p[0]   - size
   p[0] = 12;
-  // p[1-2]
+  // p[1-2] - hue
   asUint16[0] = sharedState.hue;
-  // p[3-4]
+  // p[3-4] - rainbow delta
   asUint16[1] = rainbowParams.delta;
-  // p[5-6]
+  // p[5-6] - chasing hue width
   asUint16[2] = chasingParams.hueWidth;
-  // p[7-8]
+  // p[7-8] - chasing hue delta
   asUint16[3] = chasingParams.hueDelta;
+  // p[9]   - breathing delta
   p[9] = breathingParams.delta;
+  // p[10]  - state
   p[10] = (uint8_t)currentState;
+  // p[11]  - brightness
   p[11] = sharedState.brightness;
 }
-void syncCurrentStatus() {
+
+// Send packet with current state and animation paramters to control server
+inline void syncCurrentStatus() {
   uint8_t packet[12];
   packCurrentStatus(packet);
   udp.writeTo(packet, 12, serverAddress, serverUDPPort);
 }
 
-void startListening() {
+// Set up UDP server to start accepting commands from control server
+inline void startListening() {
   if (udp.listen(localUDPPort)) {
     Serial.printf("listening on port %u IP: ", localUDPPort);
     Serial.println(WiFi.localIP());
-    Serial.println(WiFi.localIPv6());
-    udp.onPacket([](AsyncUDPPacket packet) {
-      Serial.print("UDP Packet Type: ");
-      Serial.println(packet.isBroadcast() ? "Broadcast" : packet.isMulticast() ? "Multicast"
-                                                                               : "Unicast");
-
-      ingestPacket(packet);
-    });
+    udp.onPacket(ingestPacket);
     Serial.println("Attached listener for packets");
   } else {
     Serial.println("Failed to start listening");
+    HANG();
   }
 }
 
 void setup() {
   Serial.begin(115200);
   Serial.println("Attempting to configure static IP address");
-  WiFi.mode(WIFI_STA);
 
+  WiFi.mode(WIFI_STA);
   if (!WiFi.config(localIP, gateway, subnet, primaryDNS)) {
     Serial.println("Failed to configure static IP");
+    HANG();
   }
   WiFi.begin(ssid, password);
 
@@ -355,9 +355,7 @@ void setup() {
   delay(10);
 
   Serial.printf("Attempting to listen on udp port %u\n", localUDPPort);
-
   startListening();
-  // Attach interrupt to update state every second
 }
 
 void loop() {

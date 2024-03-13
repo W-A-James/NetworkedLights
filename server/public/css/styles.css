@@ -1,0 +1,12 @@
+input {
+  display: inline-block;
+}
+
+label {
+  display: inline-block;
+}
+
+
+div#status>div {
+  display: block;
+}
