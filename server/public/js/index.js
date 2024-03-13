@@ -51,6 +51,13 @@ const CHASING_HUE_WIDTH_INPUT = document.getElementById('chasingHueWidth');
 const CHASING_DELTA_INPUT = document.getElementById('chasingDelta');
 const RAINBOW_DELTA_INPUT = document.getElementById('rainbowDelta');
 
+const BRIGHTNESS_SPAN = document.getElementById('brightnessSpan');
+const HUE_SPAN = document.getElementById('hueSpan');
+const BREATHING_DELTA_SPAN = document.getElementById('breathingDeltaSpan');
+const CHASING_HUE_WIDTH_SPAN = document.getElementById('chasingHueWidthSpan');
+const CHASING_DELTA_SPAN = document.getElementById('chasingDeltaSpan');
+const RAINBOW_DELTA_SPAN = document.getElementById('rainbowDeltaSpan');
+
 function getMCUStatus() {
   const req = new Request('/api', { method: 'GET' });
 
@@ -134,3 +141,16 @@ toggleButton.addEventListener('click', (event) => {
   if (payload.op)
     sendCommand(payload);
 });
+
+function connectSpanAndInput(input, span) {
+  input.addEventListener('change', () => {
+    span.innerText = input.value;
+  });
+}
+
+connectSpanAndInput(BRIGHTNESS_INPUT, BRIGHTNESS_SPAN);
+connectSpanAndInput(HUE_INPUT, HUE_SPAN);
+connectSpanAndInput(BREATHING_DELTA_INPUT, BREATHING_DELTA_SPAN);
+connectSpanAndInput(CHASING_HUE_WIDTH_INPUT, CHASING_HUE_WIDTH_SPAN);
+connectSpanAndInput(CHASING_DELTA_INPUT, CHASING_DELTA_SPAN);
+connectSpanAndInput(RAINBOW_DELTA_INPUT, RAINBOW_DELTA_SPAN);
