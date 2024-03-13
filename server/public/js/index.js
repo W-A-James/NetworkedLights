@@ -110,7 +110,8 @@ document.getElementById('submit').addEventListener('click', (e) => {
 });
 
 const toggleButton = document.getElementById('toggle');
-toggleButton.addEventListener('click', (_e) => {
+toggleButton.addEventListener('click', (event) => {
+  event.preventDefault();
   const on = POWER_STATUS.value === 'On'
     ? true
     : POWER_STATUS.value === 'Off'
