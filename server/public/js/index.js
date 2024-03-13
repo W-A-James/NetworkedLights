@@ -59,6 +59,7 @@ function getMCUStatus() {
     .then(status => {
       if (status.ok) {
         status = status.status;
+	console.log(status);
         POWER_STATUS.innerText = `${status.state.includes('Off') ? 'Off' : 'On'}`;
         ANIMATION_STATUS.innerText = `${status.state.split('Off')[0]}`;
         BRIGHTNESS_STATUS.innerText = `${status.brightness}`;
@@ -112,9 +113,9 @@ document.getElementById('submit').addEventListener('click', (e) => {
 const toggleButton = document.getElementById('toggle');
 toggleButton.addEventListener('click', (event) => {
   event.preventDefault();
-  const on = POWER_STATUS.value === 'On'
+  const on = POWER_STATUS.innerText=== 'On'
     ? true
-    : POWER_STATUS.value === 'Off'
+    : POWER_STATUS.innerText === 'Off'
       ? false
       : undefined;
   const payload = { opts: {} };
@@ -131,6 +132,6 @@ toggleButton.addEventListener('click', (event) => {
       toggleButton.innerText = 'Disabled';
   }
 
-  if (on === true || on === false)
+  if (payload.op)
     sendCommand(payload);
 });
