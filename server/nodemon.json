@@ -3,8 +3,11 @@
   "ignore": [
     "lib/**/*",
     "test/**/*m",
-    "node_modules/**/*"
+    "node_modules/**/*",
+    "public/**/*.js",
+    "public/**/*.css",
+    "public/**/*.html"
   ],
   "exec": "npm run build && node ./lib/index.js",
-  "ext": "js,html,ts,json"
+  "ext": "js,ts,json"
 }

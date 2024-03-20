@@ -81,33 +81,39 @@
     <div class="row">
       <!-- global options -->
       <div class="input-group align-items-center">
-        <label for="brightness" class="input-group-text">Brightness:<span id='brightnesSpan'></span></label></label>
+        <label for="brightness" class="input-group-text">Brightness</label></label>
+        <input type="number" id="brightness-num" name="brighness-num" value="255" class="form-control form-number">
         <input type="range" id="brightness" name="brightness" min="0" max="255" value="255"
           class="form-control form-range">
       </div>
 
       <div class="input-group align-items-center">
-        <label for="hue" class="input-group-text">Hue: <span id='hueSpan'></span></label>
+        <label id="hue-label" for="hue" class="input-group-text">Hue</label>
+        <input type="number" id="hue-num" class="form-control form-number" value="0">
         <input type="range" id="hue" name="hue" min="0" max="65535" value="0" class="form-control form-range">
       </div>
 
       <!-- breathing -->
       <div class="input-group align-items-center">
-        <label for="breathingDelta" class="input-group-text">Breathing Delta: <span
-            id='breathingDeltaSpan'></span></label>
-        <input type="range" id="breathingDelta" name="breathingDelta" min="0" max="255" value="1"
+        <label for="breathingDelta" class="input-group-text">Breathing Delta</label>
+        <input type="number" id="breathingDelta-num" name="breathingDelta-num" value="1" min="1" max="5"
+          class="form-control form-number">
+        <input type="range" id="breathingDelta" name="breathingDelta" min="1" max="5" value="1"
           class="form-control form-range">
       </div>
 
       <!-- chasing -->
       <div class="input-group align-items-center">
-        <label for="chasingHueWidth" class="input-group-text">Chasing hue width: <span
-            id='chasingHueWidthSpan'></span></label>
-        <input type="range" id="chasingHueWidth" name="chasingHueWidth" min="0" max="65535" value="1000"
+        <label for="chasingHueWidth" class="input-group-text">Chasing hue width</label>
+        <input type="number" id="chasingHueWidth-num" name="chasingHueWidth-num" value="20" min="1" max="50"
+          class="form-control form-number">
+        <input type="range" id="chasingHueWidth" name="chasingHueWidth" min="1" max="50" value="20"
           class="form-control form-range">
       </div>
       <div class="input-group align-items-center">
         <label for="chasingDelta" class="input-group-text">Chasing delta: <span id='chasingDeltaSpan'></span></label>
+        <input type="number" id="chasingDelta-num" name="chasingDelta-num" value="2000" min="0" max="65535"
+          class="form-control form-number">
         <input type="range" id="chasingDelta" name="chasingDelta" min="0" max="65535" value="2000"
           class="form-control form-range">
       </div>
@@ -115,7 +121,8 @@
       <!-- rainbow -->
       <div class="input-group align-items-center">
         <label for="rainbowDelta" class="input-group-text">Rainbow delta: <span id='rainbowDeltaSpan'></span></label>
-        <input type="range" id="rainbowDelta" name="rainbowDelta" min="0" max="65535" value="1000"
+        <input type="number" id="rainbowDelta-num" name="rainbowDelta-num" value="100" min="0" max="65535" class="form-control form-number">
+        <input type="range" id="rainbowDelta" name="rainbowDelta" min="0" max="65535" value="100"
           class="form-control form-range">
       </div>
     </div>
