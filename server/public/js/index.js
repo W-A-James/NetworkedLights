@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
-// Collect data from form, call fetch to send data to backend
-
 /** @typedef {Object} Options
   * @property {number=} hue
   * @property {number=} brightness
@@ -60,7 +57,12 @@ const CHASING_DELTA_NUM_INPUT = document.getElementById('chasingDelta-num');
 const RAINBOW_DELTA_NUM_INPUT = document.getElementById('rainbowDelta-num');
 
 const HUE_LABEL = document.getElementById('hue-label');
-function getMCUStatus() {
+
+/**
+  * Send a request to the API server to query for the microcontroller's current state
+  * and display it in the UI
+  **/
+function pollMCUStatus() {
   const req = new Request('/api', { method: 'GET' });
 
   fetch(req)
@@ -84,7 +86,7 @@ function getMCUStatus() {
 }
 
 // refresh mcu status every 0.25 seconds
-setInterval(getMCUStatus, 250);
+setInterval(pollMCUStatus, 250);
 
 function sendDatatoMCU() {
   const selectedRadio = (() => {
@@ -144,6 +146,10 @@ toggleButton.addEventListener('click', (event) => {
     sendCommand(payload);
 });
 
+/**
+  * Ties together values of provided range and num parameters which are HTML input elements of the
+  * respective types
+  * */
 function connectRangeAndNumInputs(range, num) {
   range.addEventListener('change', () => {
     updateInputValue(range, num);
@@ -158,32 +164,43 @@ function updateInputValue(source, dest) {
   dest.value = source.value;
 }
 
+// Brightness inputs
 connectRangeAndNumInputs(BRIGHTNESS_RANGE_INPUT, BRIGHTNESS_NUM_INPUT);
 updateInputValue(BRIGHTNESS_RANGE_INPUT, BRIGHTNESS_NUM_INPUT);
 
+// Hue Inputs
 connectRangeAndNumInputs(HUE_RANGE_INPUT, HUE_NUM_INPUT);
+
+// Sync range and num inputs on startup
 updateInputValue(HUE_RANGE_INPUT, HUE_NUM_INPUT);
-function changeHueBackgroundCoulour(event) {
+
+// Set hue label's background colour to corresponding HSL colour with full saturation and 50%
+// lightness
+function changeHueBackgroundColour(event) {
   const hueVal = Number(event.target.value);
-  if (Number.isFinite(hueVal) && hueVal <= 65536) {
-    const hueDegrees = (hueVal / 65538) * 360;
+  if (Number.isFinite(hueVal) && hueVal <= 65535) {
+    const hueDegrees = (hueVal / 65535) * 360;
     const hsl = `hsl(${Math.fround(hueDegrees)}deg 100% 50%)`;
-    console.log(`Set bg colour to ${hsl}`);
     HUE_LABEL.setAttribute("style", `background-color: ${hsl} !important`);
   }
 }
-HUE_RANGE_INPUT.addEventListener('change', changeHueBackgroundCoulour);
-HUE_NUM_INPUT.addEventListener('change', changeHueBackgroundCoulour);
+// Invoke once to have hue set correctly
+changeHueBackgroundColour({ target: HUE_RANGE_INPUT });
+HUE_RANGE_INPUT.addEventListener('change', changeHueBackgroundColour);
+HUE_NUM_INPUT.addEventListener('change', changeHueBackgroundColour);
 
-
+// Breathing delta inputs 
 connectRangeAndNumInputs(BREATHING_DELTA_RANGE_INPUT, BREATHING_DELTA_NUM_INPUT);
 updateInputValue(BREATHING_DELTA_RANGE_INPUT, BREATHING_DELTA_NUM_INPUT);
 
+// Chasing hue width inputs
 connectRangeAndNumInputs(CHASING_HUE_WIDTH_RANGE_INPUT, CHASING_HUE_WIDTH_NUM_INPUT);
 updateInputValue(CHASING_HUE_WIDTH_RANGE_INPUT, CHASING_HUE_WIDTH_NUM_INPUT);
 
+// Chasing delta inputs
 connectRangeAndNumInputs(CHASING_DELTA_RANGE_INPUT, CHASING_DELTA_NUM_INPUT);
 updateInputValue(CHASING_DELTA_RANGE_INPUT, CHASING_DELTA_NUM_INPUT);
 
+// Rainbow delta inputs
 connectRangeAndNumInputs(RAINBOW_DELTA_RANGE_INPUT, RAINBOW_DELTA_NUM_INPUT);
 updateInputValue(RAINBOW_DELTA_RANGE_INPUT, RAINBOW_DELTA_NUM_INPUT);
