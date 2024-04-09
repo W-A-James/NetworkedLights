@@ -1,4 +1,4 @@
-package mcu 
+package mcu
 
 import (
 	"bytes"
@@ -41,7 +41,7 @@ func readUint16LE(buf *bytes.Buffer) (uint16, error) {
 
 }
 
-func StatusMessageFromBuffer(buffer bytes.Buffer) (StatusMessage, error) {
+func NewStatusMessage(buffer *bytes.Buffer) (StatusMessage, error) {
 	var status StatusMessage
 	var err error
 
@@ -59,22 +59,22 @@ func StatusMessageFromBuffer(buffer bytes.Buffer) (StatusMessage, error) {
 		return status, errors.New("Malformed packed: Size should be first byte")
 	}
 
-	status.hue, err = readUint16LE(&buffer)
+	status.hue, err = readUint16LE(buffer)
 	if err != nil {
 		return status, err
 	}
 
-	status.rainbowDelta, err = readUint16LE(&buffer)
+	status.rainbowDelta, err = readUint16LE(buffer)
 	if err != nil {
 		return status, err
 	}
 
-	status.chasingHueDelta, err = readUint16LE(&buffer)
+	status.chasingHueDelta, err = readUint16LE(buffer)
 	if err != nil {
 		return status, err
 	}
 
-	status.chasingHueDelta, err = readUint16LE(&buffer)
+	status.chasingHueDelta, err = readUint16LE(buffer)
 	if err != nil {
 		return status, err
 	}
@@ -90,7 +90,10 @@ func StatusMessageFromBuffer(buffer bytes.Buffer) (StatusMessage, error) {
 	}
 
 	switch status.state {
-	case 0, 1, 2, 3, 4, 5, 6, 7:
+	case STATUS_RAINBOW, STATUS_RAINBOW_OFF,
+		STATUS_BREATHING, STATUS_BREATHING_OFF,
+		STATUS_CHASING, STATUS_CHASING_OFF,
+		STATUS_SOLID, STATUS_SOLID_OFF:
 		break
 	default:
 		return status, errors.New("Unknown state code")

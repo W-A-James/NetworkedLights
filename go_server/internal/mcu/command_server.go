@@ -55,7 +55,7 @@ func NewCommandServer(mcuAddress string, port int) (*CommandServer, error) {
 					// Create MCU status message from buffer
 					log.Println("locking")
 					cs.mcuStatusLock.Lock()
-					cs.mcuStatus, err = StatusMessageFromBuffer(*bytes.NewBuffer(buffer[0 : n-1]))
+					cs.mcuStatus, err = NewStatusMessage(bytes.NewBuffer(buffer[0 : n-1]))
 					log.Println("unlocking")
 					cs.mcuStatusLock.Unlock()
 				}
