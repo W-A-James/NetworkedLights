@@ -6,9 +6,10 @@ export class MCU {
   private readonly mcuIP: string;
   private readonly mcuPort: number;
   private readonly server: dgram.Socket;
+  private readonly statusPollerId: ReturnType<typeof setInterval>;
   private _currentStatus: StatusMessage | undefined;
 
-  constructor (port: number, mcuIP: string, mcuPort: number) {
+  constructor (port: number, mcuIP: string, mcuPort: number, pollingIntervalMS: number) {
     this.port = port;
     this.mcuIP = mcuIP;
     this.mcuPort = mcuPort;
@@ -31,6 +32,12 @@ export class MCU {
         console.error(e);
       }
     });
+
+    this.statusPollerId = setInterval(() => {
+      this.pollMCU((err, bytes) => {
+        if (err != null) { console.error(err, bytes); }
+      })
+    }, pollingIntervalMS);
     this.server.bind(this.port);
   }
 
@@ -47,17 +54,9 @@ export class MCU {
     });
   }
 
-  async sendStatusRequest (): Promise<void> {
+  pollMCU (cb?: (err: Error | null, bytes: number) => void): void {
     const message = new CommandMessage('status');
-    await new Promise((resolve, reject) => {
-      this.server.send(message.buffer, this.mcuPort, this.mcuIP, (err) => {
-        if (err != null) {
-          reject(err);
-        } else {
-          resolve(null);
-        }
-      });
-    });
+    this.server.send(message.buffer, 0, message.buffer.length, this.mcuPort, this.mcuIP, cb);
   }
 
   get currentStatus (): StatusMessage | undefined {
@@ -66,5 +65,6 @@ export class MCU {
 
   close (): void {
     this.server.close();
+    clearTimeout(this.statusPollerId);
   }
 };

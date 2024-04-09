@@ -39,19 +39,11 @@ app.post('/api', (req, res) => {
 
 // Query MCU status
 app.get('/api', (_, res) => {
-  mcu.sendStatusRequest().then(
-    () => {
-      if (mcu.currentStatus !== undefined) {
-        res.status(200).json({ ok: true, status: mcu.currentStatus });
-      } else {
-        res.status(404).json({ ok: false, message: 'Failed to reach microcontroller' });
-      }
-    },
-    (e: Error) => {
-      console.error(e);
-      res.status(500).json({ ok: false, message: e.message });
-    }
-  );
+  if (mcu.currentStatus !== undefined) {
+    res.status(200).json({ ok: true, status: mcu.currentStatus });
+  } else {
+    res.status(404).json({ ok: false, message: 'Failed to reach microcontroller' });
+  }
 });
 
 const server = app.listen(EXPRESS_TCP_PORT, () => {
@@ -63,5 +55,5 @@ const server = app.listen(EXPRESS_TCP_PORT, () => {
     return;
   }
 
-  mcu = new MCU(LOCAL_UDP_PORT, MCU_IP, MCU_PORT);
+  mcu = new MCU(LOCAL_UDP_PORT, MCU_IP, MCU_PORT, 100);
 });
