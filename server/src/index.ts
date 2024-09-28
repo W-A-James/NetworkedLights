@@ -1,62 +1,34 @@
-import express from 'express';
 import * as dotenv from 'dotenv';
 
-import { MCU } from './mcu_interface';
-import { CommandMessage } from './message';
-import { log, error } from './utils';
+import { ControlServer } from './control_server';
+import { error, log } from './utils';
 
 dotenv.config();
 
-const app = express();
-app.use(express.static('./public'));
-app.use(express.json());
-
-const EXPRESS_TCP_PORT = Number(process.env.EXPRESS_PORT);
-const LOCAL_UDP_PORT = Number(process.env.LOCAL_UDP_PORT);
 const MCU_IP = process.env.MCU_IP;
 const MCU_PORT = Number(process.env.MCU_PORT);
+const LOCAL_UDP_PORT = Number(process.env.LOCAL_UDP_PORT);
+const EXPRESS_PORT = Number(process.env.EXPRESS_PORT);
 
-let mcu: MCU;
+if (MCU_IP === undefined || Number.isNaN(LOCAL_UDP_PORT) || Number.isNaN(MCU_PORT) || Number.isNaN(EXPRESS_PORT)) {
+  throw new Error('Environment variables LOCAL_UDP_PORT, MCU_PORT, EXPRESS_PORT and MCU_IP must be defined');
+}
 
-app.post('/api', (req, res) => {
-  log(`${req.method} ${req.path} ${JSON.stringify(req.body)}`);
-  let command: CommandMessage;
-  try {
-    command = new CommandMessage(req.body.op, req.body.opts);
-  } catch (e) {
-    error(e);
-    res.status(500).json({ ok: false, message: (e as Error).message ?? undefined });
-    return;
-  }
-
-  mcu.sendCommand(command)
-    .then(() => {
-      res.status(200).json({ ok: true });
-    },
-    (e: Error) => {
-      console.error(e);
-      res.status(500).json({ ok: false, message: e.message });
-    });
+const controlServer = new ControlServer({
+  httpPort: EXPRESS_PORT,
+  localUDPPort: LOCAL_UDP_PORT,
+  mcuUDPPort: MCU_PORT,
+  mcuIP: MCU_IP
 });
 
-// Query MCU status
-app.get('/api', (req, res) => {
-  log(`${req.method} ${req.path}`);
-  if (mcu.currentStatus !== undefined) {
-    res.status(200).json({ ok: true, status: mcu.currentStatus });
-  } else {
-    res.status(404).json({ ok: false, message: 'Failed to reach microcontroller' });
-  }
+process.on('SIGINT', (s) => {
+  log(`Received ${s}, attempting to shut down server gracefully`);
+
+  controlServer.close().then(cleanClose => {
+    process.exit(cleanClose ? 0 : 1);
+  }, e => {
+    error('Unexpected error while closing server', e);
+    process.exit(1);
+  });
 });
 
-const server = app.listen(EXPRESS_TCP_PORT, () => {
-  log(`HTTP server listening on port ${EXPRESS_TCP_PORT}`);
-
-  if (MCU_IP === undefined || Number.isNaN(LOCAL_UDP_PORT) || Number.isNaN(MCU_PORT)) {
-    error('Environment variables LOCAL_UDP_PORT, MCU_PORT, and MCU_IP must be defined');
-    server.close();
-    return;
-  }
-
-  mcu = new MCU(LOCAL_UDP_PORT, MCU_IP, MCU_PORT, 100);
-});

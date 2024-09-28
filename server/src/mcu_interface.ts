@@ -1,6 +1,7 @@
 import dgram from 'node:dgram';
 import { CommandMessage, MCUStatusMessage, type StatusMessage } from './message';
 import { log, error } from './utils';
+import { promisify } from 'node:util';
 
 export class MCU {
   private readonly port: number;
@@ -43,7 +44,7 @@ export class MCU {
 
     this.statusPollerId = setInterval(() => {
       this.pollMCU().then(
-        _success => {},
+        _success => { },
         error => {
           error(error);
         });
@@ -83,8 +84,8 @@ export class MCU {
     return this._currentStatus;
   }
 
-  close (): void {
-    this.udpSock.close();
+  async close (): Promise<void> {
     clearTimeout(this.statusPollerId);
+    await promisify(this.udpSock.close.bind(this.udpSock))();
   }
 };
