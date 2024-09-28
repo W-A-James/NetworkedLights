@@ -12,6 +12,7 @@ export interface ControlServerOptions {
   mcuIP: string
   mcuUDPPort: number
   mcuPollingIntervalMS?: number
+  enableHTTP?: boolean
 };
 
 export class ControlServer {
@@ -25,7 +26,8 @@ export class ControlServer {
     this.options = options;
     const { localUDPPort, mcuIP, mcuUDPPort, mcuPollingIntervalMS } = options;
     this.mcu = new MCU(localUDPPort, mcuIP, mcuUDPPort, mcuPollingIntervalMS ?? 100);
-    this.initExpressServer();
+    const enableHTTP = options.enableHTTP ?? true;
+    if (enableHTTP) { this.initExpressServer(); }
   }
 
   initExpressServer (): void {

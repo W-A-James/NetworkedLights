@@ -21,7 +21,7 @@ export class MCU {
     this.udpSock = dgram.createSocket('udp4');
 
     this.udpSock.on('listening', () => {
-      log(`Listening on UDP port ${this.port}`);
+      log(`MCU interface listening on UDP port ${this.port}`);
     });
 
     this.udpSock.on('message', (message, rinfo) => {
@@ -39,7 +39,7 @@ export class MCU {
 
     this.udpSock.on('error', (e) => {
       error('Socket Error! Closing MCU interface', e);
-      this.close();
+      this.close().catch(e => { error('Failed to close MCU interface correctly', e); });
     })
 
     this.statusPollerId = setInterval(() => {
