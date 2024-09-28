@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 
 import { MCU } from './mcu_interface';
 import { CommandMessage } from './message';
+import { log, error } from './utils';
 
 dotenv.config();
 
@@ -18,11 +19,12 @@ const MCU_PORT = Number(process.env.MCU_PORT);
 let mcu: MCU;
 
 app.post('/api', (req, res) => {
+  log(`${req.method} ${req.path} ${JSON.stringify(req.body)}`);
   let command: CommandMessage;
   try {
     command = new CommandMessage(req.body.op, req.body.opts);
   } catch (e) {
-    console.error(e);
+    error(e);
     res.status(500).json({ ok: false, message: (e as Error).message ?? undefined });
     return;
   }
@@ -38,7 +40,8 @@ app.post('/api', (req, res) => {
 });
 
 // Query MCU status
-app.get('/api', (_, res) => {
+app.get('/api', (req, res) => {
+  log(`${req.method} ${req.path}`);
   if (mcu.currentStatus !== undefined) {
     res.status(200).json({ ok: true, status: mcu.currentStatus });
   } else {
@@ -47,10 +50,10 @@ app.get('/api', (_, res) => {
 });
 
 const server = app.listen(EXPRESS_TCP_PORT, () => {
-  console.log(`HTTP server listening on port ${EXPRESS_TCP_PORT}`);
+  log(`HTTP server listening on port ${EXPRESS_TCP_PORT}`);
 
   if (MCU_IP === undefined || Number.isNaN(LOCAL_UDP_PORT) || Number.isNaN(MCU_PORT)) {
-    console.error('Environment variables LOCAL_UDP_PORT, MCU_PORT, and MCU_IP must be defined');
+    error('Environment variables LOCAL_UDP_PORT, MCU_PORT, and MCU_IP must be defined');
     server.close();
     return;
   }

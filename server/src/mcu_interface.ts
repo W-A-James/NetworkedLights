@@ -1,44 +1,55 @@
 import dgram from 'node:dgram';
 import { CommandMessage, MCUStatusMessage, type StatusMessage } from './message';
+import { log, error } from './utils';
 
 export class MCU {
   private readonly port: number;
   private readonly mcuIP: string;
   private readonly mcuPort: number;
-  private readonly server: dgram.Socket;
-  private readonly statusPollerId: ReturnType<typeof setInterval>;
+  private readonly udpSock: dgram.Socket;
+
+  private readonly statusPollerId: NodeJS.Timeout;
   private _currentStatus: StatusMessage | undefined;
 
   constructor (port: number, mcuIP: string, mcuPort: number, pollingIntervalMS: number) {
     this.port = port;
     this.mcuIP = mcuIP;
     this.mcuPort = mcuPort;
+
     this._currentStatus = undefined;
+    this.udpSock = dgram.createSocket('udp4');
 
-    this.server = dgram.createSocket('udp4');
-
-    this.server.on('listening', () => {
-      console.log(`Listening on UDP port ${this.port}`);
+    this.udpSock.on('listening', () => {
+      log(`Listening on UDP port ${this.port}`);
     });
-    this.server.on('message', (message, rinfo) => {
+
+    this.udpSock.on('message', (message, rinfo) => {
       if (rinfo.address !== this.mcuIP) {
-        console.error('dropping packet');
+        error('dropping packet');
         return;
       }
       try {
         const status = new MCUStatusMessage(message).decode();
         this._currentStatus = status;
       } catch (e) {
-        console.error(e);
+        error(e);
       }
     });
 
+    this.udpSock.on('error', (e) => {
+      error('Socket Error! Closing MCU interface', e);
+      this.close();
+    })
+
     this.statusPollerId = setInterval(() => {
-      this.pollMCU((err, bytes) => {
-        if (err != null) { console.error(err, bytes); }
-      })
+      this.pollMCU().then(
+        _success => {},
+        error => {
+          error(error);
+        });
     }, pollingIntervalMS);
-    this.server.bind(this.port);
+
+    this.udpSock.bind(this.port);
   }
 
   async sendCommand (message: CommandMessage): Promise<void> {
@@ -54,9 +65,18 @@ export class MCU {
     });
   }
 
-  pollMCU (cb?: (err: Error | null, bytes: number) => void): void {
-    const message = new CommandMessage('status');
-    this.server.send(message.buffer, 0, message.buffer.length, this.mcuPort, this.mcuIP, cb);
+  async pollMCU (): Promise<boolean> {
+    const statusCommand = new CommandMessage('status');
+    return await new Promise((resolve, reject) => {
+      this.udpSock.send(
+        statusCommand.buffer,
+        this.mcuPort,
+        this.mcuIP,
+        (error, bytes) => {
+          if (error != null) { reject(error); return; }
+          resolve(bytes === statusCommand.buffer.length);
+        });
+    });
   }
 
   get currentStatus (): StatusMessage | undefined {
@@ -64,7 +84,7 @@ export class MCU {
   }
 
   close (): void {
-    this.server.close();
+    this.udpSock.close();
     clearTimeout(this.statusPollerId);
   }
 };
