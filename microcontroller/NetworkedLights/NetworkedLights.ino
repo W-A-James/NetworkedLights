@@ -16,7 +16,8 @@ ported for Adafruit Huzzah 32 by Warren James
  */
 #define PIXEL_PIN 25
 #define NUM_PIXELS 50
-#define HANG() do { delay(10000); } while(1)
+#define HANG() \
+  do { delay(10000); } while (1);
 
 #include <WiFi.h>
 
@@ -154,7 +155,7 @@ inline void handleCurrentState() {
       for (int i = 0; i < NUM_PIXELS; i++) {
         strip.setPixelColor(i,
                             strip.gamma32(
-                              strip.ColorHSV(chasingState.start_hue + i*(chasingParams.hueWidth / NUM_PIXELS), 255, 255)));
+                              strip.ColorHSV(chasingState.start_hue + i * (chasingParams.hueWidth / NUM_PIXELS), 255, 255)));
       }
       chasingState.start_hue += chasingParams.hueDelta;
       break;
@@ -326,7 +327,7 @@ inline void startListening() {
     Serial.println("Attached listener for packets");
   } else {
     Serial.println("Failed to start listening");
-    HANG();
+    HANG()
   }
 }
 
@@ -337,7 +338,7 @@ void setup() {
   WiFi.mode(WIFI_STA);
   if (!WiFi.config(localIP, gateway, subnet, primaryDNS)) {
     Serial.println("Failed to configure static IP");
-    HANG();
+    HANG()
   }
   WiFi.begin(ssid, password);
 
