@@ -12,23 +12,23 @@
   */
 
 /** @param command {Command} */
-function sendCommand(command) {
+async function sendCommand(command) {
   const req = new Request('/api', {
     method: 'POST',
     headers: new Headers({ 'content-type': 'application/json' }),
     body: JSON.stringify(command)
   });
 
-  fetch(req)
-    .then(async response => {
-      if (response.status === 200) {
-        return await response.json();
-      } else {
-        throw new Error('Failure on API server!', { cause: await response.json() });
-      }
-    })
-    .then(console.debug)
-    .catch(console.error);
+  try {
+    const response = await fetch(req);
+    if (response.status === 200) {
+      console.debug(await response.json());
+    } else {
+      throw new Error('Failure on API server!', { cause: await response.json() });
+    }
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 const POWER_STATUS = document.getElementById('currentPower');
@@ -62,33 +62,34 @@ const HUE_LABEL = document.getElementById('hue-label');
   * Send a request to the API server to query for the microcontroller's current state
   * and display it in the UI
   **/
-function pollMCUStatus() {
+async function pollMCUStatus() {
   const req = new Request('/api', { method: 'GET' });
 
-  fetch(req)
-    .then(res => res.json())
-    .then(status => {
-      if (status.ok) {
-        status = status.status;
-        POWER_STATUS.innerText = `${status.state.includes('Off') ? 'Off' : 'On'}`;
-        ANIMATION_STATUS.innerText = `${status.state.split('Off')[0]}`;
-        BRIGHTNESS_STATUS.innerText = `${status.brightness}`;
-        HUE_STATUS.innerText = `${status.hue}`;
-        BREATHING_DELTA_STATUS.innerText = `${status.bDelta}`;
-        CHASING_HUE_WIDTH_STATUS.innerText = `${status.cHueWidth}`;
-        CHASING_DELTA_STATUS.innerText = `${status.cHueDelta}`;
-        RAINBOW_DELTA_STATUS.innerText = `${status.rDelta}`;
-      } else {
-        throw new Error(status.message);
-      }
-    })
-    .catch(console.error);
+  try {
+    const response = await fetch(req);
+    const json = await response.json();
+    if (json.ok) {
+      const status = json.status;
+      POWER_STATUS.innerText = `${status.state.includes('Off') ? 'Off' : 'On'}`;
+      ANIMATION_STATUS.innerText = `${status.state.split('Off')[0]}`;
+      BRIGHTNESS_STATUS.innerText = `${status.brightness}`;
+      HUE_STATUS.innerText = `${status.hue}`;
+      BREATHING_DELTA_STATUS.innerText = `${status.bDelta}`;
+      CHASING_HUE_WIDTH_STATUS.innerText = `${status.cHueWidth}`;
+      CHASING_DELTA_STATUS.innerText = `${status.cHueDelta}`;
+      RAINBOW_DELTA_STATUS.innerText = `${status.rDelta}`;
+    } else {
+      throw new Error(json.message);
+    }
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 // refresh mcu status every 0.25 seconds
 setInterval(pollMCUStatus, 250);
 
-function sendDatatoMCU() {
+async function sendDatatoMCU() {
   const selectedRadio = (() => {
     for (const radio of ANIMATION_RADIO_INPUTS) {
       if (radio.checked) return radio;
@@ -112,7 +113,7 @@ function sendDatatoMCU() {
       break;
   }
 
-  sendCommand(body);
+  await sendCommand(body);
 }
 
 document.getElementById('submit').addEventListener('click', (e) => {
@@ -121,7 +122,7 @@ document.getElementById('submit').addEventListener('click', (e) => {
 });
 
 const toggleButton = document.getElementById('toggle');
-toggleButton.addEventListener('click', (event) => {
+toggleButton.addEventListener('click', async (event) => {
   event.preventDefault();
   const on = POWER_STATUS.innerText === 'On'
     ? true
@@ -143,7 +144,7 @@ toggleButton.addEventListener('click', (event) => {
   }
 
   if (payload.op)
-    sendCommand(payload);
+    await sendCommand(payload);
 });
 
 /**
