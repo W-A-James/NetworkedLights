@@ -97,17 +97,23 @@ async function sendDatatoMCU() {
   })();
 
   /** @type Command */
-  const body = { op: selectedRadio.id, opts: { hue: HUE_RANGE_INPUT.value, brightness: BRIGHTNESS_RANGE_INPUT.value } };
+  const body = {
+    op: selectedRadio.id,
+    opts: {
+      hue: Number(HUE_RANGE_INPUT.value),
+      brightness: Number(BRIGHTNESS_RANGE_INPUT.value)
+    }
+  };
   switch (selectedRadio.id) {
     case 'rainbow':
-      body.opts.delta = RAINBOW_DELTA_RANGE_INPUT.value;
+      body.opts.delta = Number(RAINBOW_DELTA_RANGE_INPUT.value);
       break;
     case 'breathing':
-      body.opts.delta = BREATHING_DELTA_RANGE_INPUT.value;
+      body.opts.delta = Number(BREATHING_DELTA_RANGE_INPUT.value);
       break;
     case 'chasing':
-      body.opts.hueWidth = CHASING_HUE_WIDTH_RANGE_INPUT.value;
-      body.opts.hueDelta = CHASING_DELTA_RANGE_INPUT.value;
+      body.opts.hueWidth = Number(CHASING_HUE_WIDTH_RANGE_INPUT.value);
+      body.opts.hueDelta = Number(CHASING_DELTA_RANGE_INPUT.value);
       break;
     case 'solid':
       break;
