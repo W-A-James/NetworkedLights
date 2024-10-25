@@ -1,6 +1,6 @@
 # NetworkedLights
 
-Code for control server lives in `server/` (Currently being rewritten in Go)
+Code for control server lives in `server/`
 
 KiCad project lives in `schematics/networked_lights`
 
