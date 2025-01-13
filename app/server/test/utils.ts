@@ -1,6 +1,5 @@
 import * as dgram from 'node:dgram';
 import { log } from '../src/utils';
-import { promisify } from 'node:util';
 
 export class MockMCU {
   sock: dgram.Socket;
@@ -39,6 +38,8 @@ export class MockMCU {
   }
 
   async close (): Promise<void> {
-    await promisify(this.sock.close.bind(this.sock))();
+    await new Promise<void>((resolve, _reject) => {
+      this.sock.close(resolve);
+    });
   }
 }

@@ -2,7 +2,7 @@ import express from 'express';
 
 import { MCU } from './mcu_interface';
 import { CommandMessage } from './message';
-import { log, error } from './utils';
+import { log, debug, error } from './utils';
 import { type Server } from 'http';
 import { promisify } from 'node:util';
 
@@ -26,7 +26,7 @@ export class ControlServer {
   constructor (options: ControlServerOptions) {
     this.options = options;
     const { localUDPPort, mcuIP, mcuUDPPort, mcuPollingIntervalMS } = options;
-    this.mcu = new MCU(localUDPPort, mcuIP, mcuUDPPort, mcuPollingIntervalMS ?? 100);
+    this.mcu = new MCU(localUDPPort, mcuIP, mcuUDPPort, mcuPollingIntervalMS ?? 250);
     const enableHTTP = options.enableHTTP ?? true;
     if (enableHTTP) { this.initExpressServer(); }
   }
@@ -38,7 +38,7 @@ export class ControlServer {
     this.app.use(express.json());
 
     this.app.post('/api', (req, res) => {
-      log(`${req.ip} - ${req.method} ${req.path} ${JSON.stringify(req.body)}`);
+      debug(`${req.ip} - ${req.method} ${req.path} ${JSON.stringify(req.body)}`);
       let command: CommandMessage;
       try {
         command = new CommandMessage(req.body.op, req.body.opts);
@@ -60,6 +60,7 @@ export class ControlServer {
 
     // Query MCU status
     this.app.get('/api', (_req, res) => {
+      debug(`GET from ${_req.ip}`);
       if (this.mcu.currentStatus !== undefined) {
         res.status(200).json({ ok: true, status: this.mcu.currentStatus });
       } else {

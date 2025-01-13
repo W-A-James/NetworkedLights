@@ -1,9 +1,16 @@
-export function log (...args: any[]): void {
+function logPrefix (): string {
   const date = new Date();
-  console.log(`[${date.toISOString()}]`, ...args);
+  return `[${date.toISOString()}]`;
+}
+
+export function log (...args: any[]): void {
+  console.log(logPrefix(), ...args);
 }
 
 export function error (...args: any[]): void {
-  const date = new Date();
-  console.error(`[${date.toISOString()}]`, ...args);
+  console.error(logPrefix(), ...args);
+}
+
+export function debug (...args: any[]): void {
+  if (process.env.DEBUG != null) log(...args);
 }
