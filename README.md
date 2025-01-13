@@ -1,6 +1,6 @@
 # NetworkedLights
 
-Code for control server lives in `server/`
+Code for Control web-app lives in `app/`
 
 KiCad project lives in `schematics/networked_lights`
 
