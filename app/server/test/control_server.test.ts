@@ -21,7 +21,7 @@ describe('ControlServer', function () {
 
     before(() => {
       mockMCU = new MockMCU({ port: mockMCUPort, controlServerIP: ip, controlServerPort });
-      controlServer = new ControlServer({ localUDPPort: controlServerPort, httpPort, mcuIP: '127.0.0.1', mcuUDPPort: 9898, mcuPollingIntervalMS: 100, enableHTTP: false });
+      controlServer = new ControlServer({ localUDPPort: controlServerPort, httpPort, mcuIP: '127.0.0.1', mcuUDPPort: 9898, mcuPollingIntervalMS: 100, enableHTTP: false, staticPath: __dirname });
       ws = createWriteStream('./control_server_memory_profile.json', { flags: 'w' });
       ws.write('[');
     });

@@ -44,7 +44,8 @@ export class MCU {
 
     this.statusPollerId = setInterval(() => {
       this.pollMCU().then(
-        _success => { },
+        _success => {
+        },
         error => {
           error(error);
         });
