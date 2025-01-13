@@ -38,36 +38,40 @@ export async function sendCommand(command: Command) {
   }
 }
 
-export async function pollMCUStatus(): Promise<StatusProps> {
+export async function pollMCUStatus(): Promise<StatusProps | undefined> {
   const req = new Request('/api', { method: 'GET' });
 
-  const response = await fetch(req);
-  const json = await response.json();
-  if (json.ok) {
-    const status = json.status;
+  try {
+    const response = await fetch(req);
+    const json = await response.json();
+    if (json.ok) {
+      const status = json.status;
 
-    const rv: StatusProps = {
-      power: status.state.includes('Off') ? false : true,
-      animation: status.state.split('Off')[0],
-      brightness: status.brightness,
-      hue: status.hue,
-      breathingDelta: status.bDelta,
-      chasingHueWidth: status.cHueWidth,
-      chasingHueDelta: status.cHueDelta,
-      rainbowDelta: status.rDelta,
-    };
-    return rv;
-  } else {
-    throw new Error(json.message);
+      const rv: StatusProps = {
+        power: !status.state.includes('Off'),
+        animation: status.state.split('Off')[0],
+        brightness: status.brightness,
+        hue: status.hue,
+        breathingDelta: status.bDelta,
+        chasingHueWidth: status.cHueWidth,
+        chasingHueDelta: status.cHueDelta,
+        rainbowDelta: status.rDelta,
+      };
+      return rv;
+    } else {
+      throw new Error(json.message);
+    }
+  } catch (e) {
+    console.error(e);
   }
 }
 
 export async function sendDataToMCU(status: StatusProps) {
-  let body: Command;
+  let command: Command;
   const op = status.animation;
   switch (status.animation) {
     case 'rainbow':
-      body = {
+      command = {
         op,
         opts: {
           delta: status.rainbowDelta,
@@ -77,7 +81,7 @@ export async function sendDataToMCU(status: StatusProps) {
       };
       break;
     case 'breathing':
-      body = {
+      command = {
         op,
         opts: {
           delta: status.breathingDelta,
@@ -87,7 +91,7 @@ export async function sendDataToMCU(status: StatusProps) {
       };
       break;
     case 'chasing':
-      body = {
+      command = {
         op,
         opts: {
           hueDelta: status.chasingHueDelta,
@@ -98,7 +102,7 @@ export async function sendDataToMCU(status: StatusProps) {
       };
       break;
     case 'solid':
-      body = {
+      command = {
         op,
         opts: {
           brightness: status.brightness,
@@ -110,5 +114,5 @@ export async function sendDataToMCU(status: StatusProps) {
       throw new Error(`Invalid op: ${op}`);
   }
 
-  await sendCommand(body);
+  await sendCommand(command);
 }

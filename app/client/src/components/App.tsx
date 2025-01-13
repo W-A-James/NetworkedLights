@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
-import Header from "./components/Header";
-import Status from "./components/Status";
-import Controls from "./components/Controls";
-import UpdateButton from "./components/UpdateButton";
-import ToggleButton from "./components/ToggleButton";
-import { pollMCUStatus } from './common';
+import Header from "./Header";
+import Status from "./Status";
+import Controls from "./Controls";
+import UpdateButton from "./UpdateButton";
+import ToggleButton from "./ToggleButton";
 
-import './App.css';
+import { pollMCUStatus } from '../api';
+
+import '../css/App.css';
 
 function App() {
   // This is the local state of the command that will be sent when the Update button is pressed
@@ -44,27 +45,9 @@ function App() {
   });
   useEffect(() => {
     const interval = setInterval(async () => {
-      const value = await pollMCUStatus();
-      if (value) {
-        const brightness: number = value.brightness;
-        const breathingDelta: number = value.bDelta;
-        const animation: string = value.state.split('Off')[0];
-        const hue: number = value.hue;
-        const chasingHueWidth: number = value.cHueWidth;
-        const chasingHueDelta: number = value.cHueDelta;
-        const rainbowDelta: number = value.rDelta;
-        const power: boolean = !value.state.endsWith('Off');
-
-        setMCUState({
-          power,
-          animation,
-          hue,
-          brightness,
-          breathingDelta,
-          chasingHueWidth,
-          chasingHueDelta,
-          rainbowDelta,
-        });
+      const newMCUStatus = await pollMCUStatus();
+      if (newMCUStatus) {
+        setMCUState(newMCUStatus);
       }
     }, 250)
 

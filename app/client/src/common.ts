@@ -23,20 +23,3 @@ export interface StatusControlProps extends StatusProps {
   setChasingHueDelta: Setter<StatusProps['chasingHueDelta']>
   setRainbowDelta: Setter<StatusProps['rainbowDelta']>
 }
-
-
-export async function pollMCUStatus() {
-  const req = new Request('/api', { method: 'GET' });
-
-  try {
-    const response = await fetch(req);
-    const json = await response.json();
-    if (json.ok) {
-      return json.status;
-    } else {
-      throw new Error(json.message);
-    }
-  } catch (e) {
-    console.error(e);
-  }
-}
