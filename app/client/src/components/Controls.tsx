@@ -12,7 +12,10 @@ function InputGroup(props: { children: any; }) {
 function NumericAndRangeInput({ label, value, min, max, bgColour, setValue }: { label: string, value?: number, min?: number, max?: number, bgColour?: string, setValue: Setter<number> }) {
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setValue(Number(e.target?.value))
+    const newValue = Number(e.target?.value);
+
+    if (newValue !== value)
+      setValue(Number(e.target?.value))
   }
 
 
@@ -76,11 +79,11 @@ export function AnimationParameterControls({
     </div>
   )
 }
-function Radio({ name, value, checked, setAnimation }: { name: string, value: string, checked?: boolean, setAnimation: Setter<string> }) {
+function Radio({ name, value, checked, animation, setAnimation }: { name: string, value: string, checked?: boolean, animation: string, setAnimation: Setter<string> }) {
   const [isChecked, setIsChecked] = useState(checked);
-  function handleChange(e: React.MouseEvent<HTMLInputElement>) {
+  function handleChange(_e: React.MouseEvent<HTMLInputElement>) {
     setIsChecked(!isChecked);
-    if (isChecked) setAnimation(value);
+    if (isChecked && animation !== value) setAnimation(value);
   }
   return (
     <>
@@ -95,10 +98,10 @@ export function AnimationRadios({ animation, setAnimation }: { animation: string
     <div className="row">
       <form>
         <div className="container">
-          <Radio name="animation" value="rainbow" checked={animation === "rainbow"} setAnimation={setAnimation} />
-          <Radio name="animation" value="breathing" checked={animation === "breathing"}  setAnimation={setAnimation}/>
-          <Radio name="animation" value="chasing" checked={animation === "chasing"}  setAnimation={setAnimation}/>
-          <Radio name="animation" value="solid" checked={animation === "solid"}  setAnimation={setAnimation}/>
+          <Radio name="animation" value="rainbow" checked={animation === "rainbow"} animation={animation} setAnimation={setAnimation} />
+          <Radio name="animation" value="breathing" checked={animation === "breathing"} animation={animation} setAnimation={setAnimation} />
+          <Radio name="animation" value="chasing" animation={animation} checked={animation === "chasing"} setAnimation={setAnimation} />
+          <Radio name="animation" value="solid" checked={animation === "solid"} animation={animation} setAnimation={setAnimation} />
         </div>
       </form>
     </div>
