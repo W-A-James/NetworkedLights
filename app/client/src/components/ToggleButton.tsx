@@ -1,5 +1,5 @@
-import { sendCommand } from './api';
-import { Setter } from './common';
+import { sendCommand } from '../api';
+import { Setter } from '../common';
 export default function ToggleButton({ power, brightness, hue, setPower }: { power: boolean, brightness: number, hue: number, setPower: Setter<boolean> }) {
   return (
     <button id="toggle" className="btn btn-primary rounded-pill px-3" data-state="on"

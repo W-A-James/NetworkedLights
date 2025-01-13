@@ -1,30 +1,70 @@
 import { useState, useEffect } from 'react';
-import './App.css';
-import Header from "./Header";
-import Status from "./Status";
-import Controls from "./Controls";
-import UpdateButton from "./UpdateButton";
-import ToggleButton from "./ToggleButton";
+import Header from "./components/Header";
+import Status from "./components/Status";
+import Controls from "./components/Controls";
+import UpdateButton from "./components/UpdateButton";
+import ToggleButton from "./components/ToggleButton";
 import { pollMCUStatus } from './common';
+
+import './App.css';
 
 function App() {
   // This is the local state of the command that will be sent when the Update button is pressed
-  const [power, setPower] = useState(true)
-  const [animation, setAnimation] = useState('solid');
-  const [brightness, setBrightness] = useState(255);
-  const [hue, setHue] = useState(0);
-  const [breathingDelta, setBreathingDelta] = useState(1);
-  const [chasingHueWidth, setChasingHueWidth] = useState(20);
-  const [chasingHueDelta, setChasingHueDelta] = useState(100);
-  const [rainbowDelta, setRainbowDelta] = useState(100);
+  const [command, setCommand] = useState({
+    power: true,
+    animation: 'solid',
+    brightness: 255,
+    hue: 0,
+    breathingDelta: 1,
+    chasingHueWidth: 20,
+    chasingHueDelta: 100,
+    commandRainbowDelta: 100
+  });
+  const [commandPower, setCommandPower] = useState(true)
+  const [commandAnimation, setCommandAnimation] = useState('solid');
+  const [commandBrightness, setCommandBrightness] = useState(255);
+  const [commandHue, setCommandHue] = useState(0);
+  const [commandBreathingDelta, setCommandBreathingDelta] = useState(1);
+  const [commandChasingHueWidth, setCommandChasingHueWidth] = useState(20);
+  const [commandChasingHueDelta, setCommandChasingHueDelta] = useState(100);
+  const [commandRainbowDelta, setCommandRainbowDelta] = useState(100);
 
-  const [mcuState, setMCUState] = useState({});
+  const [mcuState, setMCUState] = useState({
+    power: true,
+    animation: 'solid',
+    brightness: 255,
+    hue: 0,
+    breathingDelta: 1,
+    chasingHueWidth: 20,
+    chasingHueDelta: 100,
+    rainbowDelta: 100
+  });
   useEffect(() => {
-    setInterval(async () => {
+    const interval = setInterval(async () => {
       const value = await pollMCUStatus();
-      console.log(value);
-      setMCUState(value);
+
+      const brightness: number = value.brightness;
+      const breathingDelta: number = value.bDelta;
+      const animation: string = value.state.split('Off')[0];
+      const hue: number = value.hue;
+      const chasingHueWidth: number = value.cHueWidth;
+      const chasingHueDelta: number = value.cHueDelta;
+      const rainbowDelta: number = value.rDelta;
+      const power: boolean = !value.state.endsWith('Off');
+
+      setMCUState({
+        power,
+        animation,
+        hue,
+        brightness,
+        breathingDelta,
+        chasingHueWidth,
+        chasingHueDelta,
+        rainbowDelta,
+      });
     }, 250)
+
+    return () => clearInterval(interval);
   }, [mcuState, setMCUState]);
 
 
@@ -33,67 +73,60 @@ function App() {
       <Header title="Networked Lights Controller" />
 
       <Status
-        power={power}
-        animation={animation}
-        brightness={brightness}
-        hue={hue}
-        breathingDelta={breathingDelta}
-        chasingHueWidth={chasingHueWidth}
-        chasingHueDelta={chasingHueDelta}
-        rainbowDelta={rainbowDelta}
+        mcuState={mcuState}
       />
       <Controls
-        power={power}
-        setPower={setPower}
+        power={commandPower}
+        setPower={setCommandPower}
 
-        animation={animation}
-        setAnimation={setAnimation}
+        animation={commandAnimation}
+        setAnimation={setCommandAnimation}
 
-        brightness={brightness}
-        setBrightness={setBrightness}
+        brightness={commandBrightness}
+        setBrightness={setCommandBrightness}
 
-        hue={hue}
-        setHue={setHue}
+        hue={commandHue}
+        setHue={setCommandHue}
 
-        breathingDelta={breathingDelta}
-        setBreathingDelta={setBreathingDelta}
+        breathingDelta={commandBreathingDelta}
+        setBreathingDelta={setCommandBreathingDelta}
 
-        chasingHueWidth={chasingHueWidth}
-        setChasingHueWidth={setChasingHueWidth}
+        chasingHueWidth={commandChasingHueWidth}
+        setChasingHueWidth={setCommandChasingHueWidth}
 
-        chasingHueDelta={chasingHueDelta}
-        setChasingHueDelta={setChasingHueDelta}
+        chasingHueDelta={commandChasingHueDelta}
+        setChasingHueDelta={setCommandChasingHueDelta}
 
-        rainbowDelta={rainbowDelta}
-        setRainbowDelta={setRainbowDelta} />
+        rainbowDelta={commandRainbowDelta}
+        setRainbowDelta={setCommandRainbowDelta} />
 
       <UpdateButton
         name="Update"
 
-        power={power}
-        setPower={setPower}
+        power={commandPower}
+        setPower={setCommandPower}
 
-        animation={animation}
-        setAnimation={setAnimation}
+        animation={commandAnimation}
+        setAnimation={setCommandAnimation}
 
-        brightness={brightness}
-        setBrightness={setBrightness}
+        brightness={commandBrightness}
+        setBrightness={setCommandBrightness}
 
-        hue={hue}
-        setHue={setHue}
+        hue={commandHue}
+        setHue={setCommandHue}
 
-        breathingDelta={breathingDelta}
-        setBreathingDelta={setBreathingDelta}
+        breathingDelta={commandBreathingDelta}
+        setBreathingDelta={setCommandBreathingDelta}
 
-        chasingHueWidth={chasingHueWidth}
-        setChasingHueWidth={setChasingHueWidth}
+        chasingHueWidth={commandChasingHueWidth}
+        setChasingHueWidth={setCommandChasingHueWidth}
 
-        chasingHueDelta={chasingHueDelta}
-        setChasingHueDelta={setChasingHueDelta}
+        chasingHueDelta={commandChasingHueDelta}
+        setChasingHueDelta={setCommandChasingHueDelta}
 
-        rainbowDelta={rainbowDelta}
-        setRainbowDelta={setRainbowDelta} />
-      <ToggleButton power={power} brightness={brightness} hue={hue} setPower={setPower} />
+        rainbowDelta={commandRainbowDelta}
+        setRainbowDelta={setCommandRainbowDelta} />
+      <ToggleButton power={commandPower} brightness={commandBrightness} hue={commandHue} setPower={setCommandPower} />
     </div>
   );
 }

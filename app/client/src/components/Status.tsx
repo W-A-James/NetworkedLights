@@ -1,4 +1,4 @@
-import { StatusProps } from './common';
+import { StatusProps } from '../common';
 
 function StatusEntry({ name, className, value }: { name: string, className: string, value: any }) {
   return (
@@ -9,7 +9,8 @@ function StatusEntry({ name, className, value }: { name: string, className: stri
   );
 }
 
-export default function Status({ power, animation, brightness, hue, breathingDelta, chasingHueWidth, chasingHueDelta, rainbowDelta }: StatusProps) {
+export default function Status({ mcuState }: { mcuState: StatusProps }) {
+  const { power, animation, brightness, hue, breathingDelta, chasingHueWidth, chasingHueDelta, rainbowDelta } = mcuState;
   return (
     <div id="status" className="row">
       <table className="table table-light table-hover">

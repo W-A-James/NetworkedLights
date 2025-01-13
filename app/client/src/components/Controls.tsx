@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Setter, StatusControlProps } from './common';
+import { Setter, StatusControlProps } from '../common';
 
 function InputGroup(props: { children: any; }) {
   return (
