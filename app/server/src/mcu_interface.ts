@@ -46,8 +46,8 @@ export class MCU {
       this.pollMCU().then(
         _success => {
         },
-        error => {
-          error(error);
+        err => {
+          error(err);
         });
     }, pollingIntervalMS);
 
