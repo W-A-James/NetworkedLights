@@ -23,3 +23,8 @@ export interface StatusControlProps extends StatusProps {
   setChasingHueDelta: Setter<StatusProps['chasingHueDelta']>
   setRainbowDelta: Setter<StatusProps['rainbowDelta']>
 }
+
+export const FILES = {
+  LOGO_SVG: '/logo.svg',
+  LOGO_PNG: '/logo.png'
+};

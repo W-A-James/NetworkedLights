@@ -6,6 +6,7 @@ import UpdateButton from "./UpdateButton";
 import ToggleButton from "./ToggleButton";
 
 import { pollMCUStatus } from '../api';
+import { FILES } from '../common';
 
 import '../css/App.css';
 
@@ -57,7 +58,7 @@ function App() {
 
   return (
     <div className="App">
-      <Header title="Networked Lights Controller" />
+      <Header title="Networked Lights Controller" imgsrc={FILES.LOGO_SVG} />
 
       <Status
         mcuState={mcuState}

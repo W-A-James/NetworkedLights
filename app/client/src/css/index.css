@@ -24,3 +24,8 @@ label {
 div#status>div {
   display: block;
 }
+
+header>img {
+  height: 80px;
+  display: inline-block;
+}

@@ -1,0 +1,10 @@
+.Header {
+}
+
+.Header>img {
+  height: 80px;
+  display: inline-block;
+}
+
+.Header>span {
+}
